@@ -113,8 +113,8 @@ export default function ChatInterface() {
   return (
     <Card className="w-full h-[calc(100vh-20rem)] shadow-xl flex flex-col">
       <CardHeader className="border-b">
-        <CardTitle className="text-lg flex items-center">
-          <Zap className="mr-2 text-primary" /> Revogreen AI Assistant
+        <CardTitle className="text-base sm:text-lg flex items-center">
+          <Zap className="mr-2 h-5 w-5 text-primary" /> Revogreen AI Assistant
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow p-0 overflow-hidden">
