@@ -4,7 +4,7 @@ import { ShoppingCart, MessageSquare, Phone } from "lucide-react";
 
 export default function Footer() {
   const catalogueUrl = "https://wa.me/c/2347067844630";
-  const whatsappNumber = "2347067844630"; // Used for wa.me link, no '+'
+  const whatsappChatUrl = "https://wa.me/2347067844630"; // Updated variable name for clarity
   const phoneNumber = "+2347067844630"; // Used for tel: link, includes '+'
 
   return (
@@ -21,7 +21,7 @@ export default function Footer() {
           <Button 
             variant="outline" 
             className="w-full sm:w-auto bg-card hover:bg-accent/10 border-primary text-primary"
-            onClick={() => window.open(`https://wa.me/${whatsappNumber}`, '_blank')}
+            onClick={() => window.open(whatsappChatUrl, '_blank')}
           >
             <MessageSquare className="mr-2 h-5 w-5" /> Chat on WhatsApp
           </Button>
@@ -37,7 +37,7 @@ export default function Footer() {
           © {new Date().getFullYear()} Revogreen Energy Hub. All rights reserved.
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          AI-powered electrical advice for Ibadan, Nigeria.
+          AI-powered electrical advice for Nigeria.
         </p>
       </div>
     </footer>
