@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, MessageSquare, Phone } from "lucide-react";
 
 export default function Footer() {
-  // IMPORTANT: Replace these placeholders with your actual contact information and links!
-  const catalogueUrl = "https://shop.revogreenenergyhub.com"; // Example: Your online store URL
-  const whatsappNumber = "2348012345678"; // Example: Your WhatsApp number (international format without '+')
-  const phoneNumber = "+2348012345678"; // Example: Your business phone number
+  const catalogueUrl = "https://wa.me/c/2347067844630";
+  const whatsappNumber = "2347067844630"; // Used for wa.me link, no '+'
+  const phoneNumber = "+2347067844630"; // Used for tel: link, includes '+'
 
   return (
     <footer className="bg-muted/50 py-8 text-center">
