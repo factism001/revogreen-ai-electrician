@@ -10,21 +10,21 @@ export function RevogreenLogo(props: SVGProps<SVGSVGElement>) {
       aria-label="Revogreen Logo"
       {...props}
     >
-      <rect width="200" height="50" fill="transparent" />
-      {/* Simple placeholder: A green leaf-like shape and a yellow bolt */}
-      <path 
-        d="M30 25 C 10 25, 10 5, 30 5 C 50 5, 50 25, 30 25 M30 5 C 30 0, 40 15, 25 20 M30 25 C 30 45, 10 45, 15 30" 
-        fill="hsl(var(--primary))" 
-      />
-      <polygon points="35,15 45,15 40,25 50,25 30,45 38,30 28,30" fill="hsl(var(--accent))" />
+      <g transform="translate(10, 5)"> {/* Position the new R icon */}
+        {/* Orange part of R, offset by 1px from left edge of its group for "border" effect */}
+        <path d="M1 0 H11 V40 H1 Z" fill="hsl(var(--accent))" />
+        {/* Green part of R, starts after orange bar + 1px gap */}
+        {/* Outer curve: M12,0 to M12,20 (height 20), bulging right by 16 (rx). Leg tip at x=22. */}
+        <path d="M12 0 A16 10 0 0 1 12 20 L22 40 L12 40 Z" fill="hsl(var(--primary))" />
+      </g>
       
       <text
-        x="55"
-        y="33"
+        x="55" // Position of the "Revogreen" text
+        y="33" // Vertical alignment of the text
         fontFamily="var(--font-geist-sans), sans-serif"
         fontSize="24"
         fontWeight="bold"
-        fill="hsl(var(--primary))"
+        fill="hsl(var(--primary))" // Color of the text
       >
         Revogreen
       </text>
