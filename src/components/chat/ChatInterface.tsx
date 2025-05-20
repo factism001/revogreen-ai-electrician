@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, type FormEvent } from 'react';
@@ -22,6 +23,12 @@ export interface Message {
 
 type AiMode = "advice" | "troubleshooting" | "recommendation";
 
+const introductoryMessages: Record<AiMode, string> = {
+  advice: "Hello! I'm Revodev, your AI Electrician. In Advice Mode, you can ask me general electrical questions relevant to Nigeria. How can I assist you today?",
+  troubleshooting: "Hi, I'm Revodev. Switched to Troubleshooting Mode! Please describe the electrical problem you're experiencing in detail, and I'll provide potential steps and safety tips for the Nigerian context.",
+  recommendation: "Welcome to Accessory Recommendation Mode! I'm Revodev. Tell me about your electrical needs, and I'll suggest suitable accessories available in Nigeria and tell you a bit about them."
+};
+
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -34,6 +41,20 @@ export default function ChatInterface() {
       scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
     }
   }, [messages]);
+
+  useEffect(() => {
+    const introContent = introductoryMessages[aiMode];
+    if (introContent) {
+      const introMessage: Message = {
+        id: `${Date.now().toString()}-intro-${aiMode}`,
+        sender: 'ai',
+        content: introContent,
+        type: 'text',
+      };
+      setMessages((prevMessages) => [...prevMessages, introMessage]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aiMode]); // Only re-run if aiMode changes
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,24 +98,24 @@ export default function ChatInterface() {
           break;
       }
       
+      setMessages((prevMessages) => prevMessages.filter(msg => msg.type !== 'loading'));
       const aiMessage: Message = {
-        id: Date.now().toString(),
+        id: Date.now().toString(), // Ensure AI response gets a new ID
         sender: 'ai',
         content: aiResponseContent,
         type: responseType,
       };
-      setMessages((prevMessages) => prevMessages.filter(msg => msg.type !== 'loading'));
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
 
     } catch (error) {
       console.error('Error fetching AI response:', error);
+      setMessages((prevMessages) => prevMessages.filter(msg => msg.type !== 'loading'));
       const errorMessage: Message = {
-        id: Date.now().toString(),
+        id: Date.now().toString(), // Ensure error message gets a new ID
         sender: 'ai',
         content: 'Sorry, something went wrong. Please try again.',
         type: 'error',
       };
-      setMessages((prevMessages) => prevMessages.filter(msg => msg.type !== 'loading'));
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setIsLoading(false);
