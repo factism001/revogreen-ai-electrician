@@ -125,9 +125,9 @@ export default function ChatInterface() {
         </ScrollArea>
       </CardContent>
       <div className="p-4 border-t bg-muted/30">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+        <div className="flex flex-col gap-2">
           <Select value={aiMode} onValueChange={(value) => setAiMode(value as AiMode)}>
-            <SelectTrigger className="w-[180px] shrink-0">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select mode" />
             </SelectTrigger>
             <SelectContent>
@@ -136,20 +136,22 @@ export default function ChatInterface() {
               <SelectItem value="recommendation"><Zap className="inline-block mr-2 h-4 w-4" />Accessories</SelectItem>
             </SelectContent>
           </Select>
-          <Input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={getPlaceholderText()}
-            disabled={isLoading}
-            className="flex-grow bg-background focus-visible:ring-primary"
-            aria-label="Chat input"
-          />
-          <Button type="submit" disabled={isLoading || !inputValue.trim()} className="bg-primary hover:bg-primary/90">
-            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-            <span className="sr-only">Send message</span>
-          </Button>
-        </form>
+          <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <Input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder={getPlaceholderText()}
+              disabled={isLoading}
+              className="flex-grow bg-background focus-visible:ring-primary"
+              aria-label="Chat input"
+            />
+            <Button type="submit" size="icon" disabled={isLoading || !inputValue.trim()} className="bg-primary hover:bg-primary/90">
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              <span className="sr-only">Send message</span>
+            </Button>
+          </form>
+        </div>
       </div>
     </Card>
   );
