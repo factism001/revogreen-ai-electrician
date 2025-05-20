@@ -12,8 +12,90 @@ interface ChatMessageProps {
   message: Message;
 }
 
+// Helper function to render text with simple Markdown (bold, italics)
+const renderFormattedText = (text: string) => {
+  if (typeof text !== 'string') {
+    // Fallback for non-string content, though typically we expect strings here.
+    return { __html: '' };
+  }
+  let html = text;
+  // Bold: **text**
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Italics: *text* or _text_
+  // Important: Replace _text_ first if also handling *text* for italics to avoid conflicts if * is part of the _text_ content.
+  // However, typically _ and * are interchangeable for italics by many Markdown parsers.
+  // Let's handle both common styles for italics.
+  html = html.replace(/_(.*?)_/g, '<em>$1</em>'); // _italic_
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');   // *italic* (ensure this doesn't conflict with bold if ** was not fully consumed)
+  
+  // Note: newlines are handled by the `whitespace-pre-wrap` class on the parent element.
+  return { __html: html };
+};
+
 export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.sender === 'user';
+
+  const renderContent = () => {
+    if (message.type === 'loading') {
+      return (
+        <div className="flex items-center space-x-2">
+          <div className="h-2 w-2 bg-current rounded-full animate-pulse [animation-delay:-0.3s]"></div>
+          <div className="h-2 w-2 bg-current rounded-full animate-pulse [animation-delay:-0.15s]"></div>
+          <div className="h-2 w-2 bg-current rounded-full animate-pulse"></div>
+        </div>
+      );
+    }
+
+    if (typeof message.content === 'string') {
+      // User messages are plain text, AI text messages might have Markdown.
+      if (isUser) {
+        return <p className="text-sm whitespace-pre-wrap">{message.content}</p>;
+      }
+      return <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(message.content)} />;
+    }
+    
+    if (message.type === 'advice' && message.content && typeof message.content === 'object' && 'answer' in message.content) {
+      return <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText((message.content as ElectricalAdviceOutput).answer)} />;
+    }
+    
+    if (message.type === 'troubleshooting' && message.content && typeof message.content === 'object' && 'troubleshootingSteps' in message.content) {
+      const content = message.content as TroubleshootingAdviceOutput;
+      return (
+        <div>
+          <h4 className="font-semibold mb-1 text-sm">Troubleshooting Steps:</h4>
+          <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(content.troubleshootingSteps)} />
+          {content.safetyPrecautions && (
+            <>
+              <h4 className="font-semibold mt-3 mb-1 text-sm">Safety Precautions:</h4>
+              <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(content.safetyPrecautions)} />
+            </>
+          )}
+        </div>
+      );
+    }
+    
+    if (message.type === 'recommendation' && message.content && typeof message.content === 'object' && 'accessories' in message.content) {
+      const content = message.content as AccessoryRecommendationOutput;
+      return (
+        <div>
+          <h4 className="font-semibold mb-1 text-sm">Recommended Accessories:</h4>
+          <ul className="list-disc list-inside text-sm">
+            {content.accessories.map((acc, index) => (
+              <li key={index} className="whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(acc)} />
+            ))}
+          </ul>
+          {content.justification && (
+            <>
+              <h4 className="font-semibold mt-3 mb-1 text-sm">Justification:</h4>
+              <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(content.justification)} />
+            </>
+          )}
+        </div>
+      );
+    }
+
+    return <p className="text-sm whitespace-pre-wrap italic">Received unhandled message format.</p>;
+  };
 
   return (
     <div className={cn('flex items-end gap-2 mb-4', isUser ? 'justify-end' : 'justify-start')}>
@@ -27,45 +109,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         isUser ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-card text-card-foreground rounded-bl-none'
       )}>
         <CardContent className="p-3">
-          {message.type === 'loading' ? (
-            <div className="flex items-center space-x-2">
-              <div className="h-2 w-2 bg-current rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-              <div className="h-2 w-2 bg-current rounded-full animate-pulse [animation-delay:-0.15s]"></div>
-              <div className="h-2 w-2 bg-current rounded-full animate-pulse"></div>
-            </div>
-          ) : typeof message.content === 'string' ? (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-          ) : message.type === 'advice' && message.content && typeof message.content === 'object' && 'answer' in message.content ? (
-            <p className="text-sm whitespace-pre-wrap">{(message.content as ElectricalAdviceOutput).answer}</p>
-          ) : message.type === 'troubleshooting' && message.content && typeof message.content === 'object' && 'troubleshootingSteps' in message.content ? (
-            <div>
-              <h4 className="font-semibold mb-1 text-sm">Troubleshooting Steps:</h4>
-              <p className="text-sm whitespace-pre-wrap">{(message.content as TroubleshootingAdviceOutput).troubleshootingSteps}</p>
-              {(message.content as TroubleshootingAdviceOutput).safetyPrecautions && (
-                <>
-                  <h4 className="font-semibold mt-3 mb-1 text-sm">Safety Precautions:</h4>
-                  <p className="text-sm whitespace-pre-wrap">{(message.content as TroubleshootingAdviceOutput).safetyPrecautions}</p>
-                </>
-              )}
-            </div>
-          ) : message.type === 'recommendation' && message.content && typeof message.content === 'object' && 'accessories' in message.content ? (
-            <div>
-              <h4 className="font-semibold mb-1 text-sm">Recommended Accessories:</h4>
-              <ul className="list-disc list-inside text-sm whitespace-pre-wrap">
-                {(message.content as AccessoryRecommendationOutput).accessories.map((acc, index) => (
-                  <li key={index}>{acc}</li>
-                ))}
-              </ul>
-              {(message.content as AccessoryRecommendationOutput).justification && (
-                <>
-                  <h4 className="font-semibold mt-3 mb-1 text-sm">Justification:</h4>
-                  <p className="text-sm whitespace-pre-wrap">{(message.content as AccessoryRecommendationOutput).justification}</p>
-                </>
-              )}
-            </div>
-          ) : (
-             <p className="text-sm whitespace-pre-wrap italic">Received unhandled message format.</p>
-          )}
+          {renderContent()}
         </CardContent>
       </Card>
       {isUser && (
