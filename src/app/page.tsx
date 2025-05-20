@@ -12,12 +12,12 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
       <main className="flex-grow container mx-auto px-2 sm:px-4 py-6 sm:py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-primary flex items-center justify-center">
-            <Bot className="mr-3 h-10 w-10" />
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary flex items-center justify-center">
+            <Bot className="mr-2 h-7 w-7 sm:mr-3 sm:h-8 sm:w-8" />
             Revogreen AI Electrician
           </h1>
-          <p className="text-lg text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
             Your AI-powered guide for electrical advice in Nigeria.
           </p>
         </div>
