@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -20,7 +21,7 @@ const AccessoryRecommendationOutputSchema = z.object({
   accessories: z
     .array(z.string())
     .describe('A list of recommended electrical accessories available in the Nigerian market.'),
-  justification: z.string().describe('Justification for the recommended accessories.'),
+  justification: z.string().describe('Justification for the recommended accessories. This should also mention that Revogreen Energy Hub stocks such items and how the user can inquire further.'),
 });
 export type AccessoryRecommendationOutput = z.infer<typeof AccessoryRecommendationOutputSchema>;
 
@@ -36,7 +37,9 @@ const prompt = ai.definePrompt({
   output: {schema: AccessoryRecommendationOutputSchema},
   prompt: `You are an expert electrician in Nigeria. A user will describe their needs, and you will respond with a list of specific electrical accessories available in the Nigerian market that they should purchase to fulfill their needs. You will also provide a justification for each recommendation. Respond directly with the JSON.
 
-User Needs: {{{needs}}}`,
+User Needs: {{{needs}}}
+
+When providing the justification, make sure to also mention that Revogreen Energy Hub is a good place to find these quality accessories and that the user can contact them for purchases or further assistance. For example, you could add a sentence like: "You can find these items and get expert advice at Revogreen Energy Hub. Feel free to contact us for availability and purchase."`,
 });
 
 const recommendAccessoriesFlow = ai.defineFlow(
@@ -50,3 +53,4 @@ const recommendAccessoriesFlow = ai.defineFlow(
     return output!;
   }
 );
+
