@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PlusCircle, XCircle, CalculatorIcon, AlertTriangle } from 'lucide-react'; // Added CalculatorIcon
+import { PlusCircle, XCircle, CalculatorIcon, AlertTriangle } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 interface Appliance {
   id: string;
@@ -37,8 +38,10 @@ export default function EnergyConsumptionCalculator() {
   const [currentApplianceName, setCurrentApplianceName] = useState('');
   const [currentApplianceWatts, setCurrentApplianceWatts] = useState('');
   const [currentApplianceHours, setCurrentApplianceHours] = useState('');
+  const [electricityTariff, setElectricityTariff] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('month');
-  const [totalConsumption, setTotalConsumption] = useState<number | null>(null);
+  const [totalConsumptionKWh, setTotalConsumptionKWh] = useState<number | null>(null);
+  const [totalCost, setTotalCost] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleAddAppliance = () => {
@@ -77,7 +80,8 @@ export default function EnergyConsumptionCalculator() {
 
   const calculateConsumption = () => {
     if (appliances.length === 0) {
-      setTotalConsumption(0);
+      setTotalConsumptionKWh(0);
+      setTotalCost(null);
       return;
     }
 
@@ -87,18 +91,26 @@ export default function EnergyConsumptionCalculator() {
     });
 
     const consumptionForPeriod = dailyKWh * periodMultipliers[selectedPeriod];
-    setTotalConsumption(consumptionForPeriod);
+    setTotalConsumptionKWh(consumptionForPeriod);
+
+    const tariffValue = parseFloat(electricityTariff);
+    if (!isNaN(tariffValue) && tariffValue > 0) {
+      setTotalCost(consumptionForPeriod * tariffValue);
+    } else {
+      setTotalCost(null);
+    }
   };
   
   useEffect(() => {
-    // Recalculate when appliances or period change
+    // Recalculate when appliances, period, or tariff change
     if (appliances.length > 0) {
         calculateConsumption();
     } else {
-        setTotalConsumption(null);
+        setTotalConsumptionKWh(null);
+        setTotalCost(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appliances, selectedPeriod]);
+  }, [appliances, selectedPeriod, electricityTariff]);
 
 
   return (
@@ -109,7 +121,7 @@ export default function EnergyConsumptionCalculator() {
           Energy Consumption Calculator
         </CardTitle>
         <CardDescription>
-          Add your appliances, their power rating (in Watts), and how many hours you use them per day. Then, see the estimated energy consumption.
+          Add your appliances, their power rating (Watts), daily usage (Hours/Day), and optionally your electricity tariff (NGN per kWh) to estimate consumption and cost.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -156,7 +168,7 @@ export default function EnergyConsumptionCalculator() {
         {appliances.length > 0 && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Your Appliances:</h3>
-            <ScrollArea className="h-[200px] p-1 border rounded-md">
+            <ScrollArea className="h-[150px] p-1 border rounded-md">
               <div className="space-y-2 p-3">
               {appliances.map(app => (
                 <Card key={app.id} className="p-3 flex justify-between items-center bg-card">
@@ -175,10 +187,24 @@ export default function EnergyConsumptionCalculator() {
             </ScrollArea>
           </div>
         )}
+        
+        <div className="space-y-2">
+            <Label htmlFor="tariff-input">Electricity Tariff (NGN per kWh, Optional)</Label>
+            <Input
+                id="tariff-input"
+                type="number"
+                placeholder="e.g., 50.5"
+                value={electricityTariff}
+                onChange={(e) => setElectricityTariff(e.target.value)}
+                min="0"
+                step="0.01"
+                className="bg-background"
+            />
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
             <div>
-                <label htmlFor="period-select" className="block text-sm font-medium text-muted-foreground mb-1">Calculation Period:</label>
+                <Label htmlFor="period-select" className="block text-sm font-medium text-muted-foreground mb-1">Calculation Period:</Label>
                 <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as Period)} name="period-select">
                 <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select period" />
@@ -197,18 +223,24 @@ export default function EnergyConsumptionCalculator() {
         </div>
       </CardContent>
 
-      {totalConsumption !== null && (
+      {totalConsumptionKWh !== null && (
         <CardFooter className="mt-4">
           <Card className="w-full p-4 bg-primary/10 border-primary/30">
             <CardTitle className="text-lg text-primary mb-1">Total Estimated Consumption:</CardTitle>
             <p className="text-2xl font-bold text-primary">
-              {totalConsumption.toFixed(2)} kWh 
+              {totalConsumptionKWh.toFixed(2)} kWh 
               <span className="text-base font-normal text-primary/80"> {periodLabels[selectedPeriod]}</span>
             </p>
+            {totalCost !== null && totalCost > 0 && (
+                 <p className="text-xl font-bold text-primary mt-2">
+                    Estimated Cost: NGN {totalCost.toFixed(2)}
+                    <span className="text-sm font-normal text-primary/80"> {periodLabels[selectedPeriod]}</span>
+                </p>
+            )}
           </Card>
         </CardFooter>
       )}
-       {appliances.length === 0 && totalConsumption === null && (
+       {appliances.length === 0 && totalConsumptionKWh === null && (
           <CardFooter className="mt-2">
              <p className="text-sm text-muted-foreground text-center w-full">
                 Add some appliances to see your estimated energy consumption.
@@ -218,3 +250,4 @@ export default function EnergyConsumptionCalculator() {
     </Card>
   );
 }
+
