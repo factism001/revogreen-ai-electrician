@@ -314,8 +314,8 @@ export default function ChatInterface() {
 
   return (
     <>
-      <Card className="w-full h-[calc(100vh-20rem)] shadow-xl flex flex-col">
-        <CardHeader className="border-b">
+      <Card className="w-full h-[calc(100vh-20rem)] flex flex-col bg-background text-foreground border-0 shadow-none rounded-none">
+        <CardHeader>
           <CardTitle className="text-base sm:text-lg flex items-center">
             <Zap className="mr-2 h-5 w-5 text-primary" /> Revogreen AI Assistant
           </CardTitle>
@@ -342,7 +342,7 @@ export default function ChatInterface() {
             </Button>
           )}
         </CardContent>
-        <div className="p-4 border-t bg-muted/30">
+        <div className="p-4">
            {imagePreviewUrl && (
             <div className="mb-2 p-2 border rounded-md bg-background relative max-w-xs mx-auto">
               <Image src={imagePreviewUrl} alt="Selected preview" width={100} height={100} className="rounded-md object-contain max-h-24 w-auto" />
