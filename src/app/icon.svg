@@ -1,0 +1,8 @@
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision">
+  <g transform="translate(13.5, 4)">
+    {/* Orange part of R, using accent color #ff8000 */}
+    <path d="M1 0 H11 V40 H1 Z" fill="#ff8000" />
+    {/* Green part of R, using primary color #33a147 */}
+    <path d="M12 0 A16 10 0 0 1 12 20 L22 40 L12 40 Z" fill="#33a147" />
+  </g>
+</svg>
