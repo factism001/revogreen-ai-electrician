@@ -39,11 +39,11 @@ export default function HomePage() {
       <Header />
       <main className="flex-grow container mx-auto px-2 sm:px-4 py-6 sm:py-8 flex flex-col">
         <div className="text-center mb-4 sm:mb-6">
-          <h1 className="text-lg sm:text-3xl font-bold text-primary flex items-center justify-center">
-            <Bot className="mr-1 h-5 w-5 sm:mr-3 sm:h-8 sm:w-8" />
+          <h1 className="text-xs sm:text-3xl font-bold text-primary flex items-center justify-center">
+            <Bot className="mr-1 h-4 w-4 sm:mr-3 sm:h-8 sm:w-8" />
             Revogreen AI Electrician
           </h1>
-          <p className="text-xs sm:text-base text-muted-foreground mt-1 sm:mt-1.5">
+          <p className="text-xs sm:text-base text-muted-foreground mt-0.5 sm:mt-1.5">
             Your AI-powered guide for electrical advice in Nigeria.
           </p>
         </div>
@@ -123,8 +123,8 @@ export default function HomePage() {
           </TabsContent>
         </Tabs>
       </main>
-      {/* Conditionally render Footer */}
-      {!(isMobile && activeTab === 'chat') && <Footer />}
+      {/* Conditionally render Footer using a ternary operator for clarity */}
+      {(isMobile && activeTab === 'chat') ? null : <Footer />}
     </div>
   );
 }
