@@ -1,8 +1,9 @@
 
 import type { Message } from './ChatInterface';
+import Image from 'next/image';
 import { Avatar } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
-import { RevogreenRLogo } from '@/components/icons/RevogreenRLogo'; // Import new logo
+import { RevogreenRLogo } from '@/components/icons/RevogreenRLogo';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
@@ -16,13 +17,10 @@ interface ChatMessageProps {
 // Helper function to render text with simple Markdown (bold, italics)
 const renderFormattedText = (text: string) => {
   if (typeof text !== 'string') {
-    // Fallback for non-string content, though typically we expect strings here.
     return { __html: '' };
   }
   let html = text;
-  // Bold: **text**
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  // Italics: *text* or _text_
   html = html.replace(/_(.*?)_/g, '<em>$1</em>'); 
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');   
   
@@ -33,6 +31,11 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.sender === 'user';
 
   const renderContent = () => {
+    let textContent: string | null = null;
+    let adviceOutput: ElectricalAdviceOutput | null = null;
+    let troubleshootingOutput: TroubleshootingAdviceOutput | null = null;
+    let recommendationOutput: AccessoryRecommendationOutput | null = null;
+
     if (message.type === 'loading') {
       return (
         <div className="flex items-center space-x-2">
@@ -44,60 +47,73 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     }
 
     if (typeof message.content === 'string') {
-      if (isUser) {
-        return <p className="text-sm whitespace-pre-wrap">{message.content}</p>;
-      }
-      return <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(message.content)} />;
-    }
-    
-    if (message.type === 'advice' && message.content && typeof message.content === 'object' && 'answer' in message.content) {
-      return <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText((message.content as ElectricalAdviceOutput).answer)} />;
-    }
-    
-    if (message.type === 'troubleshooting' && message.content && typeof message.content === 'object' && 'troubleshootingSteps' in message.content) {
-      const content = message.content as TroubleshootingAdviceOutput;
-      return (
-        <div>
-          <h4 className="font-semibold mb-1 text-sm">Troubleshooting Steps:</h4>
-          <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(content.troubleshootingSteps)} />
-          {content.safetyPrecautions && (
-            <>
-              <h4 className="font-semibold mt-3 mb-1 text-sm">Safety Precautions:</h4>
-              <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(content.safetyPrecautions)} />
-            </>
-          )}
-        </div>
-      );
-    }
-    
-    if (message.type === 'recommendation' && message.content && typeof message.content === 'object' && 'accessories' in message.content) {
-      const content = message.content as AccessoryRecommendationOutput;
-      return (
-        <div>
-          <h4 className="font-semibold mb-1 text-sm">Recommended Accessories:</h4>
-          <ul className="list-disc list-inside text-sm">
-            {content.accessories.map((acc, index) => (
-              <li key={index} className="whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(acc)} />
-            ))}
-          </ul>
-          {content.justification && (
-            <>
-              <h4 className="font-semibold mt-3 mb-1 text-sm">Justification:</h4>
-              <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(content.justification)} />
-            </>
-          )}
-        </div>
-      );
+      textContent = message.content;
+    } else if (message.type === 'advice' && message.content && 'answer' in message.content) {
+      adviceOutput = message.content as ElectricalAdviceOutput;
+    } else if (message.type === 'troubleshooting' && message.content && 'troubleshootingSteps' in message.content) {
+      troubleshootingOutput = message.content as TroubleshootingAdviceOutput;
+    } else if (message.type === 'recommendation' && message.content && 'accessories' in message.content) {
+      recommendationOutput = message.content as AccessoryRecommendationOutput;
+    } else {
+      textContent = "Received unhandled message format.";
     }
 
-    return <p className="text-sm whitespace-pre-wrap italic">Received unhandled message format.</p>;
+    return (
+      <>
+        {message.image && (
+          <div className="my-2">
+            <Image 
+              src={message.image} 
+              alt="User uploaded image" 
+              width={200} // Adjust as needed
+              height={200} // Adjust as needed
+              className="rounded-md object-contain max-h-48 w-auto"
+              data-ai-hint="electrical component"
+            />
+          </div>
+        )}
+        {textContent && (
+          <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={isUser ? {__html: textContent} : renderFormattedText(textContent)} />
+        )}
+        {adviceOutput && (
+          <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(adviceOutput.answer)} />
+        )}
+        {troubleshootingOutput && (
+          <div>
+            <h4 className="font-semibold mb-1 text-sm">Troubleshooting Steps:</h4>
+            <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(troubleshootingOutput.troubleshootingSteps)} />
+            {troubleshootingOutput.safetyPrecautions && (
+              <>
+                <h4 className="font-semibold mt-3 mb-1 text-sm">Safety Precautions:</h4>
+                <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(troubleshootingOutput.safetyPrecautions)} />
+              </>
+            )}
+          </div>
+        )}
+        {recommendationOutput && (
+           <div>
+            <h4 className="font-semibold mb-1 text-sm">Recommended Accessories:</h4>
+            <ul className="list-disc list-inside text-sm">
+              {recommendationOutput.accessories.map((acc, index) => (
+                <li key={index} className="whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(acc)} />
+              ))}
+            </ul>
+            {recommendationOutput.justification && (
+              <>
+                <h4 className="font-semibold mt-3 mb-1 text-sm">Justification:</h4>
+                <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={renderFormattedText(recommendationOutput.justification)} />
+              </>
+            )}
+          </div>
+        )}
+      </>
+    );
   };
 
   return (
     <div className={cn('flex items-end gap-2 mb-4', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
-        <Avatar className="h-8 w-8 bg-card border border-primary/30 text-primary-foreground flex items-center justify-center overflow-hidden">
-          {/* The RevogreenRLogo will be scaled by its own width/height attributes or by CSS if needed */}
+        <Avatar className="h-8 w-8 bg-card border border-primary/30 text-primary-foreground flex items-center justify-center overflow-hidden self-start">
           <RevogreenRLogo className="h-5 w-5" /> 
         </Avatar>
       )}
@@ -110,7 +126,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         </CardContent>
       </Card>
       {isUser && (
-        <Avatar className="h-8 w-8 bg-accent text-accent-foreground flex items-center justify-center">
+        <Avatar className="h-8 w-8 bg-accent text-accent-foreground flex items-center justify-center self-start">
           <User size={20} />
         </Avatar>
       )}

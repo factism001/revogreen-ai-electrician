@@ -7,7 +7,7 @@ import { getTroubleshootingAdvice, type TroubleshootingAdviceInput, type Trouble
 import { recommendAccessories, type AccessoryRecommendationInput, type AccessoryRecommendationOutput } from '@/ai/flows/accessory-recommendation';
 import { getEnergySavingEstimate, type EnergySavingInput, type EnergySavingOutput } from '@/ai/flows/energy-savings-estimator';
 import { getProjectPlan, type ProjectPlannerInput, type ProjectPlannerOutput } from '@/ai/flows/project-planner';
-import { checkInMemoryRateLimit } from './inMemoryRateLimiter'; // Import the rate limiter
+import { checkInMemoryRateLimit } from './inMemoryRateLimiter';
 
 function getClientIp(): string | null {
   const FALLBACK_IP_ADDRESS = '0.0.0.0'
@@ -15,18 +15,13 @@ function getClientIp(): string | null {
   const realIp = headers().get('x-real-ip');
 
   if (forwardedFor) {
-    // x-forwarded-for can be a comma-separated list of IPs
-    // The first one is usually the client IP
     return forwardedFor.split(',')[0].trim();
   }
   if (realIp) {
     return realIp.trim();
   }
-  // Return a fallback or null if IP cannot be determined.
-  // Render.com typically sets x-forwarded-for.
-  // For local development, these headers might not be present.
   if (process.env.NODE_ENV === 'development') {
-    return '127.0.0.1'; // Mock IP for local dev
+    return '127.0.0.1'; 
   }
   return FALLBACK_IP_ADDRESS; 
 }

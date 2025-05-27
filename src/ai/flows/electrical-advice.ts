@@ -13,11 +13,12 @@ import {z} from 'genkit';
 
 const ElectricalAdviceInputSchema = z.object({
   question: z.string().describe('The electrical question to be answered.'),
+  imageDataUri: z.string().optional().describe("An image related to the electrical question, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
 });
 export type ElectricalAdviceInput = z.infer<typeof ElectricalAdviceInputSchema>;
 
 const ElectricalAdviceOutputSchema = z.object({
-  answer: z.string().describe('The answer to the electrical question, tailored to the Nigerian context.'),
+  answer: z.string().describe('The answer to the electrical question, tailored to the Nigerian context, considering any provided image.'),
 });
 export type ElectricalAdviceOutput = z.infer<typeof ElectricalAdviceOutputSchema>;
 
@@ -43,8 +44,13 @@ Your primary role is to provide electrical advice.
 - Crucially, your expertise is strictly limited to electrical topics relevant to Nigeria (advice, troubleshooting, accessories, energy savings, project planning) and information about Revogreen Energy Hub. If the user asks a question completely unrelated to these areas (e.g., about history, cooking, general science, personal opinions, sports, etc.), you MUST politely decline to answer and state your specialization. For example: "I'm sorry, but my expertise is focused on electrical topics and information about Revogreen Energy Hub. How can I assist you with your electrical needs today?"
 
 Answer the following question, making sure to tailor your answer to the Nigerian context. Where appropriate and natural, you can mention that Revogreen Energy Hub can assist with related products or services.
+If an image is provided, analyze it carefully and use it as a key piece of information in your response.
 
-Question: {{{question}}}`,
+Question: {{{question}}}
+{{#if imageDataUri}}
+User has provided this image for context:
+{{media url=imageDataUri}}
+{{/if}}`,
 });
 
 const electricalAdviceFlow = ai.defineFlow(
@@ -58,3 +64,4 @@ const electricalAdviceFlow = ai.defineFlow(
     return output!;
   }
 );
+

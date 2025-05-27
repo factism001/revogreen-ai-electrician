@@ -1,16 +1,17 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type FormEvent, type UIEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent, type UIEvent, type ChangeEvent } from 'react';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessage from './ChatMessage';
 import { fetchElectricalAdvice, fetchTroubleshootingAdvice, fetchAccessoryRecommendation } from '@/lib/aiActions';
-import type { ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
+import type { ElectricalAdviceInput, ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
 import type { TroubleshootingAdviceOutput } from '@/ai/flows/troubleshooting-advice';
 import type { AccessoryRecommendationOutput } from '@/ai/flows/accessory-recommendation';
-import { Send, Loader2, Zap, Wrench, Lightbulb, ArrowDownCircle, ShieldAlert } from 'lucide-react';
+import { Send, Loader2, Zap, Wrench, Lightbulb, ArrowDownCircle, ShieldAlert, Paperclip, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -22,24 +23,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
+
 
 export interface Message {
   id: string;
   sender: 'user' | 'ai';
   content: string | ElectricalAdviceOutput | TroubleshootingAdviceOutput | AccessoryRecommendationOutput;
   type?: 'text' | 'loading' | 'error' | 'advice' | 'troubleshooting' | 'recommendation';
+  image?: string; // For displaying image preview in chat (data URI)
 }
 
 type AiMode = "advice" | "troubleshooting" | "recommendation";
 
 const introductoryMessages: Record<AiMode, string> = {
-  advice: "Hello! I'm Revodev, your AI Electrician. In Advice Mode, you can ask me general electrical questions relevant to Nigeria. How can I assist you today?",
-  troubleshooting: "Hi, I'm Revodev. Switched to Troubleshooting Mode! Please describe the electrical problem you're experiencing in detail, and I'll provide potential steps and safety tips for the Nigerian context.",
-  recommendation: "Welcome to Accessory Recommendation Mode! I'm Revodev. Tell me about your electrical needs, and I'll suggest suitable accessories available in Nigeria and tell you a bit about them."
+  advice: "Hello! I'm Revodev, your AI Electrician. In Advice Mode, you can ask general electrical questions relevant to Nigeria. You can also upload an image for context. How can I assist?",
+  troubleshooting: "Hi, I'm Revodev. Switched to Troubleshooting Mode! Please describe the electrical problem you're experiencing in detail. Image uploads are not supported in this mode yet. I'll provide potential steps and safety tips.",
+  recommendation: "Welcome to Accessory Recommendation Mode! I'm Revodev. Tell me about your electrical needs, and I'll suggest suitable accessories. Image uploads are not supported here."
 };
 
-const SCROLL_THRESHOLD = 50; // Pixels from bottom to hide the scroll button
+const SCROLL_THRESHOLD = 50; 
 const DISCLAIMER_LOCAL_STORAGE_KEY = 'revogreenAiDisclaimerAcknowledged_v1';
+const MAX_IMAGE_SIZE_MB = 5;
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -47,11 +52,18 @@ export default function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const [aiMode, setAiMode] = useState<AiMode>("advice");
   const [showScrollToBottomButton, setShowScrollToBottomButton] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null); 
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const [disclaimerAcknowledged, setDisclaimerAcknowledged] = useState(false);
   const [isDisclaimerDialogOpen, setIsDisclaimerDialogOpen] = useState(false);
   const [pendingInputValue, setPendingInputValue] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+
 
   useEffect(() => {
     const acknowledged = localStorage.getItem(DISCLAIMER_LOCAL_STORAGE_KEY) === 'true';
@@ -91,12 +103,38 @@ export default function ChatInterface() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aiMode]); 
 
-  const processAndSendMessage = async (messageContent: string) => {
+  const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const processAndSendMessage = async (messageContent: string, imageFile?: File | null) => {
+    let imageDataUriForBackend: string | undefined = undefined;
+    let imagePreviewForUserMessage: string | undefined = imageFile ? await fileToDataUri(imageFile) : undefined;
+
+
+    if (imageFile && aiMode === 'advice') {
+       try {
+        imageDataUriForBackend = await fileToDataUri(imageFile);
+      } catch (error) {
+        console.error("Error converting image to Data URI:", error);
+        toast({ variant: "destructive", title: "Image Error", description: "Could not process the image." });
+        setIsLoading(false);
+        return;
+      }
+    }
+
+
     const userMessage: Message = {
       id: Date.now().toString(),
       sender: 'user',
       content: messageContent,
       type: 'text',
+      image: imagePreviewForUserMessage,
     };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     
@@ -124,7 +162,11 @@ export default function ChatInterface() {
           break;
         case "advice":
         default:
-          aiResponseContent = await fetchElectricalAdvice({ question: userMessage.content as string });
+          const adviceInput: ElectricalAdviceInput = { question: userMessage.content as string };
+          if (imageDataUriForBackend) {
+            adviceInput.imageDataUri = imageDataUriForBackend;
+          }
+          aiResponseContent = await fetchElectricalAdvice(adviceInput);
           responseType = 'advice';
           break;
       }
@@ -151,37 +193,100 @@ export default function ChatInterface() {
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setIsLoading(false);
+      setSelectedImageFile(null);
+      setImagePreviewUrl(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // Reset file input
+      }
     }
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const currentInput = inputValue.trim();
-    if (!currentInput || isLoading) return;
+    if ((!currentInput && !selectedImageFile) || isLoading) return;
+     if (aiMode !== 'advice' && selectedImageFile) {
+        toast({
+            variant: "destructive",
+            title: "Image Upload Not Supported",
+            description: `Image uploads are only supported in "Advice" mode. Please switch modes or remove the image.`,
+        });
+        return;
+    }
+
 
     if (!disclaimerAcknowledged) {
       setPendingInputValue(currentInput);
+      setPendingImageFile(selectedImageFile); // Store pending image
       setIsDisclaimerDialogOpen(true);
-      setInputValue(''); // Clear the input field
+      setInputValue(''); 
+      // Don't clear selectedImageFile or imagePreviewUrl here, do it in handleDisclaimerAccept or if user cancels
       return;
     }
-    await processAndSendMessage(currentInput);
+    await processAndSendMessage(currentInput, selectedImageFile);
     setInputValue('');
+    // selectedImageFile & previewUrl are cleared inside processAndSendMessage's finally block
   };
 
   const handleDisclaimerAccept = async () => {
     setDisclaimerAcknowledged(true);
     localStorage.setItem(DISCLAIMER_LOCAL_STORAGE_KEY, 'true');
     setIsDisclaimerDialogOpen(false);
-    if (pendingInputValue) {
-      await processAndSendMessage(pendingInputValue);
+    if (pendingInputValue !== null || pendingImageFile !== null) { // Check if there's pending input or image
+      await processAndSendMessage(pendingInputValue || '', pendingImageFile); // Pass pending image
       setPendingInputValue(null);
+      setPendingImageFile(null); // Clear pending image
+    }
+  };
+  
+  const handleImageSelect = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+        toast({
+          variant: "destructive",
+          title: "Image Too Large",
+          description: `Please select an image smaller than ${MAX_IMAGE_SIZE_MB}MB.`,
+        });
+        if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast({
+          variant: "destructive",
+          title: "Invalid File Type",
+          description: "Please select an image file (e.g., JPG, PNG, WEBP).",
+        });
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+
+      setSelectedImageFile(file);
+      try {
+        const dataUri = await fileToDataUri(file);
+        setImagePreviewUrl(dataUri);
+      } catch (error) {
+        console.error("Error creating image preview:", error);
+        toast({ variant: "destructive", title: "Image Preview Error", description: "Could not display image preview." });
+        setSelectedImageFile(null);
+        setImagePreviewUrl(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
     }
   };
 
+  const removeSelectedImage = () => {
+    setSelectedImageFile(null);
+    setImagePreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // Reset the actual file input
+    }
+  };
+
+
   const getPlaceholderText = () => {
     switch (aiMode) {
-      case "advice": return "Ask a general electrical question...";
+      case "advice": return "Ask an electrical question or describe an image...";
       case "troubleshooting": return "Describe your electrical problem...";
       case "recommendation": return "What electrical accessories do you need?";
       default: return "Type your message...";
@@ -238,18 +343,34 @@ export default function ChatInterface() {
           )}
         </CardContent>
         <div className="p-4 border-t bg-muted/30">
+           {imagePreviewUrl && (
+            <div className="mb-2 p-2 border rounded-md bg-background relative max-w-xs mx-auto">
+              <Image src={imagePreviewUrl} alt="Selected preview" width={100} height={100} className="rounded-md object-contain max-h-24 w-auto" />
+              <Button variant="ghost" size="icon" onClick={removeSelectedImage} className="absolute top-1 right-1 h-6 w-6 bg-destructive/20 hover:bg-destructive/40 rounded-full">
+                <XCircle className="h-4 w-4 text-destructive-foreground" />
+                <span className="sr-only">Remove image</span>
+              </Button>
+            </div>
+          )}
           <div className="flex flex-col gap-2">
-            <Select value={aiMode} onValueChange={(value) => setAiMode(value as AiMode)}>
+            <Select value={aiMode} onValueChange={(value) => setAiMode(value as AiMode)} disabled={isLoading}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select mode" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="advice"><Lightbulb className="inline-block mr-2 h-4 w-4" />Advice</SelectItem>
+                <SelectItem value="advice"><Lightbulb className="inline-block mr-2 h-4 w-4" />Advice (with Image)</SelectItem>
                 <SelectItem value="troubleshooting"><Wrench className="inline-block mr-2 h-4 w-4" />Troubleshoot</SelectItem>
                 <SelectItem value="recommendation"><Zap className="inline-block mr-2 h-4 w-4" />Accessories</SelectItem>
               </SelectContent>
             </Select>
             <form onSubmit={handleSubmit} className="flex items-center gap-2">
+              {aiMode === 'advice' && (
+                <Button type="button" size="icon" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isDisclaimerDialogOpen} className="shrink-0">
+                  <Paperclip className="h-5 w-5" />
+                  <span className="sr-only">Attach image</span>
+                </Button>
+              )}
+              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageSelect} className="hidden" />
               <Input
                 type="text"
                 value={inputValue}
@@ -259,7 +380,7 @@ export default function ChatInterface() {
                 className="flex-grow bg-background focus-visible:ring-primary"
                 aria-label="Chat input"
               />
-              <Button type="submit" size="icon" disabled={isLoading || !inputValue.trim() || isDisclaimerDialogOpen} className="bg-primary hover:bg-primary/90">
+              <Button type="submit" size="icon" disabled={isLoading || (!inputValue.trim() && !selectedImageFile) || isDisclaimerDialogOpen} className="bg-primary hover:bg-primary/90">
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 <span className="sr-only">Send message</span>
               </Button>
@@ -268,7 +389,15 @@ export default function ChatInterface() {
         </div>
       </Card>
 
-      <AlertDialog open={isDisclaimerDialogOpen} onOpenChange={setIsDisclaimerDialogOpen}>
+      <AlertDialog open={isDisclaimerDialogOpen} onOpenChange={(open) => {
+          if (!open) { // If dialog is closed without accepting
+              setPendingInputValue(null);
+              setPendingImageFile(null);
+              // Optionally clear selected image if dialog is dismissed
+              // removeSelectedImage(); 
+          }
+          setIsDisclaimerDialogOpen(open);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
