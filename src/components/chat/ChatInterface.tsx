@@ -42,9 +42,11 @@ const introductoryMessages: Record<AiMode, string> = {
   recommendation: "Welcome to Accessory Recommendation Mode! I'm Revodev. Tell me about your electrical needs, and I'll suggest suitable accessories. Image uploads are not supported here."
 };
 
-const SCROLL_THRESHOLD = 50; 
+const SCROLL_THRESHOLD = 50;
 const DISCLAIMER_LOCAL_STORAGE_KEY = 'revogreenAiDisclaimerAcknowledged_v1';
 const MAX_IMAGE_SIZE_MB = 5;
+const MOBILE_INPUT_AREA_PADDING_BOTTOM = "pb-[130px] sm:pb-2"; // For ScrollArea
+const MOBILE_SCROLL_BUTTON_BOTTOM = "bottom-[140px] sm:bottom-4"; // For ScrollToBottom button
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -75,7 +77,7 @@ export default function ChatInterface() {
   const getViewport = () => {
     return scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport=""]') as HTMLElement | null;
   };
-  
+
   useEffect(() => {
     const viewport = getViewport();
     if (viewport && !showScrollToBottomButton) { // Only auto-scroll if user isn't scrolled up
@@ -101,7 +103,7 @@ export default function ChatInterface() {
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aiMode]); 
+  }, [aiMode]);
 
   const fileToDataUri = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -137,7 +139,7 @@ export default function ChatInterface() {
       image: imagePreviewForUserMessage,
     };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-    
+
     setIsLoading(true);
     const loadingMessage: Message = {
       id: (Date.now() + 1).toString(),
@@ -146,11 +148,11 @@ export default function ChatInterface() {
       type: 'loading',
     };
     setMessages((prevMessages) => [...prevMessages, loadingMessage]);
-    
+
     try {
       let aiResponseContent: ElectricalAdviceOutput | TroubleshootingAdviceOutput | AccessoryRecommendationOutput;
       let responseType: Message['type'];
-      
+
       switch (aiMode) {
         case "troubleshooting":
           aiResponseContent = await fetchTroubleshootingAdvice({ problemDescription: userMessage.content as string });
@@ -170,10 +172,10 @@ export default function ChatInterface() {
           responseType = 'advice';
           break;
       }
-      
+
       setMessages((prevMessages) => prevMessages.filter(msg => msg.type !== 'loading'));
       const aiMessage: Message = {
-        id: Date.now().toString(), 
+        id: Date.now().toString(),
         sender: 'ai',
         content: aiResponseContent,
         type: responseType,
@@ -217,9 +219,9 @@ export default function ChatInterface() {
 
     if (!disclaimerAcknowledged) {
       setPendingInputValue(currentInput);
-      setPendingImageFile(selectedImageFile); 
+      setPendingImageFile(selectedImageFile);
       setIsDisclaimerDialogOpen(true);
-      setInputValue(''); 
+      setInputValue('');
       return;
     }
     await processAndSendMessage(currentInput, selectedImageFile);
@@ -230,13 +232,13 @@ export default function ChatInterface() {
     setDisclaimerAcknowledged(true);
     localStorage.setItem(DISCLAIMER_LOCAL_STORAGE_KEY, 'true');
     setIsDisclaimerDialogOpen(false);
-    if (pendingInputValue !== null || pendingImageFile !== null) { 
-      await processAndSendMessage(pendingInputValue || '', pendingImageFile); 
+    if (pendingInputValue !== null || pendingImageFile !== null) {
+      await processAndSendMessage(pendingInputValue || '', pendingImageFile);
       setPendingInputValue(null);
-      setPendingImageFile(null); 
+      setPendingImageFile(null);
     }
   };
-  
+
   const handleImageSelect = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -246,7 +248,7 @@ export default function ChatInterface() {
           title: "Image Too Large",
           description: `Please select an image smaller than ${MAX_IMAGE_SIZE_MB}MB.`,
         });
-        if (fileInputRef.current) fileInputRef.current.value = ""; 
+        if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
       if (!file.type.startsWith('image/')) {
@@ -277,7 +279,7 @@ export default function ChatInterface() {
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; 
+      fileInputRef.current.value = "";
     }
   };
 
@@ -292,7 +294,7 @@ export default function ChatInterface() {
   };
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
-    const target = event.currentTarget; 
+    const target = event.currentTarget;
     if (target) {
       const { scrollTop, scrollHeight, clientHeight } = target;
       if (scrollHeight - scrollTop - clientHeight > SCROLL_THRESHOLD) {
@@ -319,10 +321,10 @@ export default function ChatInterface() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow p-0 overflow-hidden relative">
-          <ScrollArea 
-            className="h-full px-2 sm:px-4 pt-2 pb-1" 
-            ref={scrollAreaRef} 
-            onScroll={handleScroll} 
+          <ScrollArea
+            className={`h-full px-2 sm:px-4 pt-2 ${MOBILE_INPUT_AREA_PADDING_BOTTOM}`}
+            ref={scrollAreaRef}
+            onScroll={handleScroll}
           >
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} />
@@ -332,7 +334,7 @@ export default function ChatInterface() {
             <Button
               variant="outline"
               size="icon"
-              className="absolute bottom-4 right-4 z-10 rounded-full bg-card/80 backdrop-blur-sm hover:bg-card"
+              className={`absolute right-4 z-10 rounded-full bg-card/80 backdrop-blur-sm hover:bg-card ${MOBILE_SCROLL_BUTTON_BOTTOM}`}
               onClick={handleScrollToBottomClick}
               aria-label="Scroll to bottom"
             >
@@ -340,7 +342,7 @@ export default function ChatInterface() {
             </Button>
           )}
         </CardContent>
-        <div className="px-2 sm:px-4 py-2 border-t border-border">
+        <div className="fixed bottom-0 left-0 right-0 z-20 bg-background border-t border-border p-2 sm:static sm:z-auto sm:border-t sm:p-4">
            {imagePreviewUrl && (
             <div className="mb-2 p-2 border rounded-md bg-muted/50 relative max-w-xs mx-auto">
               <Image src={imagePreviewUrl} alt="Selected preview" width={100} height={100} className="rounded-md object-contain max-h-24 w-auto" />
@@ -388,7 +390,7 @@ export default function ChatInterface() {
       </Card>
 
       <AlertDialog open={isDisclaimerDialogOpen} onOpenChange={(open) => {
-          if (!open) { 
+          if (!open) {
               setPendingInputValue(null);
               setPendingImageFile(null);
           }
@@ -401,7 +403,7 @@ export default function ChatInterface() {
               Important Disclaimer
             </AlertDialogTitle>
             <AlertDialogDescription className="text-left max-h-[60vh] overflow-y-auto py-2">
-              Revodev AI provides general electrical advice and suggestions. Information may not be exhaustive or cover all specific situations, and AI can make mistakes. 
+              Revodev AI provides general electrical advice and suggestions. Information may not be exhaustive or cover all specific situations, and AI can make mistakes.
               <br/><br/>
               <strong>Always consult a qualified and licensed electrician</strong> before making any decisions or performing any electrical work. Revogreen Energy Hub is not liable for any actions taken based on the AI's suggestions.
               <br/><br/>

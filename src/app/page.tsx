@@ -1,14 +1,14 @@
 
-'use client'; 
+'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect for isMobile pattern
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import ChatInterface from '@/components/chat/ChatInterface';
 import FAQSection from '@/components/faq/FAQSection';
 import SafetyTipsSection from '@/components/safety/SafetyTipsSection';
-import EnergyEstimator from '@/components/features/EnergyEstimator'; 
-import ProjectPlanner from '@/components/features/ProjectPlanner'; 
+import EnergyEstimator from '@/components/features/EnergyEstimator';
+import ProjectPlanner from '@/components/features/ProjectPlanner';
 import EnergyConsumptionCalculator from '@/components/features/EnergyConsumptionCalculator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -19,10 +19,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MessageCircle, HelpCircle, ShieldAlert, Bot, Menu, BarChart3, ListChecks, Calculator } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useIsMobile } from '@/hooks/use-mobile'; // Import the hook
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<string>("chat");
+  const isMobile = useIsMobile(); // Use the hook
 
   const getTabName = (tabValue: string) => {
     if (tabValue === 'faq') return 'FAQ';
@@ -37,12 +38,12 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <Header />
       <main className="flex-grow container mx-auto px-2 sm:px-4 py-6 sm:py-8 flex flex-col">
-        <div className="text-center mb-4 sm:mb-6"> 
-          <h1 className="text-lg sm:text-3xl font-bold text-primary flex items-center justify-center"> 
-            <Bot className="mr-1 h-5 w-5 sm:mr-3 sm:h-8 sm:w-8" /> 
+        <div className="text-center mb-4 sm:mb-6">
+          <h1 className="text-lg sm:text-3xl font-bold text-primary flex items-center justify-center">
+            <Bot className="mr-1 h-5 w-5 sm:mr-3 sm:h-8 sm:w-8" />
             Revogreen AI Electrician
           </h1>
-          <p className="text-xs sm:text-base text-muted-foreground mt-1 sm:mt-1.5"> 
+          <p className="text-xs sm:text-base text-muted-foreground mt-1 sm:mt-1.5">
             Your AI-powered guide for electrical advice in Nigeria.
           </p>
         </div>
@@ -68,7 +69,7 @@ export default function HomePage() {
                   <ListChecks className="mr-2 h-5 w-5" /> Project Planner
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setActiveTab('calculator')}>
-                  <Calculator className="mr-2 h-5 w-5" /> Energy Calculator 
+                  <Calculator className="mr-2 h-5 w-5" /> Energy Calculator
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setActiveTab('faq')}>
                   <HelpCircle className="mr-2 h-5 w-5" /> FAQ
@@ -122,7 +123,8 @@ export default function HomePage() {
           </TabsContent>
         </Tabs>
       </main>
-      <Footer />
+      {/* Conditionally render Footer */}
+      {!(isMobile && activeTab === 'chat') && <Footer />}
     </div>
   );
 }
