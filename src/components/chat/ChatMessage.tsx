@@ -1,7 +1,8 @@
 
 import type { Message } from './ChatInterface';
 import { Avatar } from '@/components/ui/avatar';
-import { Bot, User } from 'lucide-react';
+import { User } from 'lucide-react';
+import { RevogreenRLogo } from '@/components/icons/RevogreenRLogo'; // Import new logo
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
@@ -22,13 +23,9 @@ const renderFormattedText = (text: string) => {
   // Bold: **text**
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   // Italics: *text* or _text_
-  // Important: Replace _text_ first if also handling *text* for italics to avoid conflicts if * is part of the _text_ content.
-  // However, typically _ and * are interchangeable for italics by many Markdown parsers.
-  // Let's handle both common styles for italics.
-  html = html.replace(/_(.*?)_/g, '<em>$1</em>'); // _italic_
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');   // *italic* (ensure this doesn't conflict with bold if ** was not fully consumed)
+  html = html.replace(/_(.*?)_/g, '<em>$1</em>'); 
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');   
   
-  // Note: newlines are handled by the `whitespace-pre-wrap` class on the parent element.
   return { __html: html };
 };
 
@@ -47,7 +44,6 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     }
 
     if (typeof message.content === 'string') {
-      // User messages are plain text, AI text messages might have Markdown.
       if (isUser) {
         return <p className="text-sm whitespace-pre-wrap">{message.content}</p>;
       }
@@ -100,8 +96,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div className={cn('flex items-end gap-2 mb-4', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
-        <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center">
-          <Bot size={20} />
+        <Avatar className="h-8 w-8 bg-card border border-primary/30 text-primary-foreground flex items-center justify-center overflow-hidden">
+          {/* The RevogreenRLogo will be scaled by its own width/height attributes or by CSS if needed */}
+          <RevogreenRLogo className="h-5 w-5" /> 
         </Avatar>
       )}
       <Card className={cn(
