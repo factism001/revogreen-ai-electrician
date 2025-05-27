@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent, type UIEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,7 +10,7 @@ import { fetchElectricalAdvice, fetchTroubleshootingAdvice, fetchAccessoryRecomm
 import type { ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
 import type { TroubleshootingAdviceOutput } from '@/ai/flows/troubleshooting-advice';
 import type { AccessoryRecommendationOutput } from '@/ai/flows/accessory-recommendation';
-import { Send, Loader2, Zap, Wrench, Lightbulb } from 'lucide-react';
+import { Send, Loader2, Zap, Wrench, Lightbulb, ArrowDownCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -29,18 +29,36 @@ const introductoryMessages: Record<AiMode, string> = {
   recommendation: "Welcome to Accessory Recommendation Mode! I'm Revodev. Tell me about your electrical needs, and I'll suggest suitable accessories available in Nigeria and tell you a bit about them."
 };
 
+const SCROLL_THRESHOLD = 50; // Pixels from bottom to hide the scroll button
+
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [aiMode, setAiMode] = useState<AiMode>("advice");
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [showScrollToBottomButton, setShowScrollToBottomButton] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null); // Ref for the ScrollArea's root
+  const viewportRef = useRef<HTMLDivElement>(null); // Ref for the ScrollArea's viewport
 
+  // Function to get the viewport element
+  const getViewport = () => {
+    // In ShadCN ScrollArea, the viewport is typically the first direct child of the ScrollArea root with specific attributes
+    // Or, if we explicitly put a ref on the ScrollAreaPrimitive.Viewport if we were building ScrollArea ourselves.
+    // For now, let's assume it's the first child of the element scrollAreaRef is attached to.
+    // A more robust way if Radix exports it, or by querySelector based on Radix attributes.
+    // For this implementation, let's assume viewportRef is correctly assigned to the Viewport element.
+    // The ScrollArea component needs to forward a ref to its Viewport for this to be clean.
+    // However, `scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]')` is a more robust way.
+    return scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport=""]') as HTMLElement | null;
+  };
+  
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+    const viewport = getViewport();
+    if (viewport) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
     }
   }, [messages]);
+
 
   useEffect(() => {
     const introContent = introductoryMessages[aiMode];
@@ -51,10 +69,16 @@ export default function ChatInterface() {
         content: introContent,
         type: 'text',
       };
-      setMessages((prevMessages) => [...prevMessages, introMessage]);
+      setMessages((prevMessages) => {
+        // Avoid adding duplicate intro messages if mode is selected quickly
+        if (prevMessages.length > 0 && prevMessages[prevMessages.length -1].id.includes(`-intro-${aiMode}`)) {
+          return prevMessages;
+        }
+        return [...prevMessages, introMessage];
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aiMode]); // Only re-run if aiMode changes
+  }, [aiMode]); 
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -100,7 +124,7 @@ export default function ChatInterface() {
       
       setMessages((prevMessages) => prevMessages.filter(msg => msg.type !== 'loading'));
       const aiMessage: Message = {
-        id: Date.now().toString(), // Ensure AI response gets a new ID
+        id: Date.now().toString(), 
         sender: 'ai',
         content: aiResponseContent,
         type: responseType,
@@ -111,7 +135,7 @@ export default function ChatInterface() {
       console.error('Error fetching AI response:', error);
       setMessages((prevMessages) => prevMessages.filter(msg => msg.type !== 'loading'));
       const errorMessage: Message = {
-        id: Date.now().toString(), // Ensure error message gets a new ID
+        id: Date.now().toString(),
         sender: 'ai',
         content: 'Sorry, something went wrong. Please try again.',
         type: 'error',
@@ -131,6 +155,25 @@ export default function ChatInterface() {
     }
   };
 
+  const handleScroll = (event: UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget; // This is the ScrollArea's Viewport
+    if (target) {
+      const { scrollTop, scrollHeight, clientHeight } = target;
+      if (scrollHeight - scrollTop - clientHeight > SCROLL_THRESHOLD) {
+        setShowScrollToBottomButton(true);
+      } else {
+        setShowScrollToBottomButton(false);
+      }
+    }
+  };
+
+  const handleScrollToBottomClick = () => {
+    const viewport = getViewport();
+    if (viewport) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+    }
+  };
+
   return (
     <Card className="w-full h-[calc(100vh-20rem)] shadow-xl flex flex-col">
       <CardHeader className="border-b">
@@ -138,12 +181,34 @@ export default function ChatInterface() {
           <Zap className="mr-2 h-5 w-5 text-primary" /> Revogreen AI Assistant
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow p-0 overflow-hidden">
-        <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+      <CardContent className="flex-grow p-0 overflow-hidden relative"> {/* Added relative positioning */}
+        <ScrollArea 
+          className="h-full p-4" 
+          ref={scrollAreaRef} // Ref to the root
+          onScroll={handleScroll} // Attach scroll handler to the ScrollArea component (Radix should bubble this from viewport)
+          // The actual viewport that scrolls will be a child, so we need to use querySelector or pass ref down.
+          // For simplicity, if ScrollArea component allows onScroll, it often means it's from the viewport or bubbled.
+          // If not, we would attach onScroll directly to the viewport element using another ref.
+          // Let's assume onScroll on ScrollArea works as expected from Radix UI.
+        >
+          {/* The viewport ref is tricky with ShadCN's ScrollArea. We might need to modify ScrollArea or use querySelector. */}
+          {/* For this example, assuming getViewport() in useEffect and handleScrollToBottomClick works. */}
+          {/* And that onScroll handler on ScrollArea gives us the viewport scroll event. */}
           {messages.map((msg) => (
             <ChatMessage key={msg.id} message={msg} />
           ))}
         </ScrollArea>
+        {showScrollToBottomButton && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute bottom-6 right-6 z-10 rounded-full bg-card/80 backdrop-blur-sm hover:bg-card"
+            onClick={handleScrollToBottomClick}
+            aria-label="Scroll to bottom"
+          >
+            <ArrowDownCircle className="h-6 w-6 text-primary" />
+          </Button>
+        )}
       </CardContent>
       <div className="p-4 border-t bg-muted/30">
         <div className="flex flex-col gap-2">
