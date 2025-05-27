@@ -1,11 +1,36 @@
 
 'use server';
 
+import { headers } from 'next/headers';
 import { getElectricalAdvice, type ElectricalAdviceInput, type ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
 import { getTroubleshootingAdvice, type TroubleshootingAdviceInput, type TroubleshootingAdviceOutput } from '@/ai/flows/troubleshooting-advice';
 import { recommendAccessories, type AccessoryRecommendationInput, type AccessoryRecommendationOutput } from '@/ai/flows/accessory-recommendation';
 import { getEnergySavingEstimate, type EnergySavingInput, type EnergySavingOutput } from '@/ai/flows/energy-savings-estimator';
 import { getProjectPlan, type ProjectPlannerInput, type ProjectPlannerOutput } from '@/ai/flows/project-planner';
+import { checkInMemoryRateLimit } from './inMemoryRateLimiter'; // Import the rate limiter
+
+function getClientIp(): string | null {
+  const FALLBACK_IP_ADDRESS = '0.0.0.0'
+  const forwardedFor = headers().get('x-forwarded-for');
+  const realIp = headers().get('x-real-ip');
+
+  if (forwardedFor) {
+    // x-forwarded-for can be a comma-separated list of IPs
+    // The first one is usually the client IP
+    return forwardedFor.split(',')[0].trim();
+  }
+  if (realIp) {
+    return realIp.trim();
+  }
+  // Return a fallback or null if IP cannot be determined.
+  // Render.com typically sets x-forwarded-for.
+  // For local development, these headers might not be present.
+  if (process.env.NODE_ENV === 'development') {
+    return '127.0.0.1'; // Mock IP for local dev
+  }
+  return FALLBACK_IP_ADDRESS; 
+}
+
 
 function handleError(error: any, context: string): string {
   let detailedMessage = 'An unknown error occurred.';
@@ -17,17 +42,22 @@ function handleError(error: any, context: string): string {
     detailedMessage = error.toString();
   }
 
-  console.error(`Error fetching ${context}:`, {
+  console.error(`Error in ${context}:`, {
     message: detailedMessage,
-    fullError: error, // Log the full error object for server-side debugging
+    fullError: error, 
   });
   
-  // Truncate message for client-side display to avoid overly long or complex errors in UI
   const clientMessageSnippet = detailedMessage.length > 70 ? detailedMessage.substring(0, 67) + '...' : detailedMessage;
-  return `Sorry, an error occurred (${context}). Details: "${clientMessageSnippet}". Please check server logs or try again.`;
+  return `Sorry, an error occurred while fetching ${context}. Details: "${clientMessageSnippet}". Please check server logs or try again.`;
 }
 
 export async function fetchElectricalAdvice(input: ElectricalAdviceInput): Promise<ElectricalAdviceOutput> {
+  const clientIp = getClientIp();
+  const rateLimitResult = checkInMemoryRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    return { answer: rateLimitResult.message };
+  }
+
   try {
     const result = await getElectricalAdvice(input);
     return result;
@@ -37,6 +67,15 @@ export async function fetchElectricalAdvice(input: ElectricalAdviceInput): Promi
 }
 
 export async function fetchTroubleshootingAdvice(input: TroubleshootingAdviceInput): Promise<TroubleshootingAdviceOutput> {
+  const clientIp = getClientIp();
+  const rateLimitResult = checkInMemoryRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    return { 
+      troubleshootingSteps: rateLimitResult.message,
+      safetyPrecautions: 'Please adhere to safety guidelines.' 
+    };
+  }
+
   try {
     const result = await getTroubleshootingAdvice(input);
     return result;
@@ -50,6 +89,15 @@ export async function fetchTroubleshootingAdvice(input: TroubleshootingAdviceInp
 }
 
 export async function fetchAccessoryRecommendation(input: AccessoryRecommendationInput): Promise<AccessoryRecommendationOutput> {
+  const clientIp = getClientIp();
+  const rateLimitResult = checkInMemoryRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    return { 
+      accessories: [],
+      justification: rateLimitResult.message
+    };
+  }
+  
   try {
     const result = await recommendAccessories(input);
     return result;
@@ -63,6 +111,16 @@ export async function fetchAccessoryRecommendation(input: AccessoryRecommendatio
 }
 
 export async function fetchEnergySavingEstimate(input: EnergySavingInput): Promise<EnergySavingOutput> {
+  const clientIp = getClientIp();
+  const rateLimitResult = checkInMemoryRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    return { 
+      overallAssessment: rateLimitResult.message,
+      suggestions: [],
+      generalTips: []
+    };
+  }
+
   try {
     const result = await getEnergySavingEstimate(input);
     return result;
@@ -77,6 +135,19 @@ export async function fetchEnergySavingEstimate(input: EnergySavingInput): Promi
 }
 
 export async function fetchProjectPlan(input: ProjectPlannerInput): Promise<ProjectPlannerOutput> {
+  const clientIp = getClientIp();
+  const rateLimitResult = checkInMemoryRateLimit(clientIp);
+  if (!rateLimitResult.allowed) {
+    return { 
+      projectName: 'Rate Limit Exceeded',
+      materialsNeeded: [],
+      toolsTypicallyRequired: [],
+      safetyPrecautions: [rateLimitResult.message],
+      additionalAdvice: 'Please wait before making new requests.',
+      isComplexProject: false 
+    };
+  }
+
   try {
     const result = await getProjectPlan(input);
     return result;
