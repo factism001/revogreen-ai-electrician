@@ -20,10 +20,12 @@ function getClientIp(): string | null {
   if (realIp) {
     return realIp.trim();
   }
+  // For development environments where x-forwarded-for might not be set
   if (process.env.NODE_ENV === 'development') {
-    return '127.0.0.1'; 
+    // You might want to return a specific IP for testing or null
+    return '127.0.0.1'; // Example for local development
   }
-  return FALLBACK_IP_ADDRESS; 
+  return FALLBACK_IP_ADDRESS; // Fallback if no IP is found
 }
 
 
@@ -39,7 +41,8 @@ function handleError(error: any, context: string): string {
 
   console.error(`Error in ${context}:`, {
     message: detailedMessage,
-    fullError: error, 
+    // Optionally log the full error object if it's not too verbose or sensitive
+    // fullError: error, 
   });
   
   // User-friendly message
@@ -99,7 +102,7 @@ export async function fetchAccessoryRecommendation(input: AccessoryRecommendatio
   } catch (error) {
     const errorMessage = handleError(error, 'accessory recommendation');
     return { 
-      accessories: ['Could not fetch recommendations at this time.'],
+      accessories: [], // Return empty array for accessories on error
       justification: errorMessage
     };
   }
@@ -124,7 +127,7 @@ export async function fetchEnergySavingEstimate(input: EnergySavingInput): Promi
     return { 
       overallAssessment: errorMessage,
       suggestions: [],
-      generalTips: ['Please try again later. Always prioritize safety with electrical appliances.']
+      generalTips: [] // Return empty array for tips on error
     };
   }
 }
@@ -150,10 +153,10 @@ export async function fetchProjectPlan(input: ProjectPlannerInput): Promise<Proj
     const errorMessage = handleError(error, 'project plan');
     return { 
       projectName: 'Error in Planning',
-      materialsNeeded: ['Could not generate material list due to an error.'],
-      toolsTypicallyRequired: [], // Keep this short as it's an error message context
+      materialsNeeded: [], // Return empty array for materials on error
+      toolsTypicallyRequired: [],
       safetyPrecautions: ['Always prioritize safety. If unsure, consult a professional.'],
-      additionalAdvice: errorMessage, // The main error message can go here
+      additionalAdvice: errorMessage,
       isComplexProject: false 
     };
   }
