@@ -150,8 +150,8 @@ export default function ChatInterface() {
     try {
       let aiResponseContent: ElectricalAdviceOutput | TroubleshootingAdviceOutput | AccessoryRecommendationOutput;
       let responseType: Message['type'];
-      const clientIp = null; // Placeholder, actual IP retrieval will be handled by aiActions
-
+      
+      // clientIp is managed by aiActions.ts now
       switch (aiMode) {
         case "troubleshooting":
           aiResponseContent = await fetchTroubleshootingAdvice({ problemDescription: userMessage.content as string });
@@ -296,7 +296,6 @@ export default function ChatInterface() {
     const target = event.currentTarget; 
     if (target) {
       const { scrollTop, scrollHeight, clientHeight } = target;
-      // Adding a small buffer to clientHeight comparison to be less sensitive
       if (scrollHeight - scrollTop - clientHeight > SCROLL_THRESHOLD) {
         setShowScrollToBottomButton(true);
       } else {
@@ -314,8 +313,8 @@ export default function ChatInterface() {
 
   return (
     <>
-      <Card className="w-full h-[calc(100vh-20rem)] flex flex-col bg-background text-foreground border-0 shadow-none rounded-none">
-        <CardHeader className="pb-3 pt-4 px-4">
+      <Card className="w-full flex flex-col flex-grow bg-background text-foreground border-0 shadow-none rounded-none">
+        <CardHeader className="pb-2 pt-3 px-2 sm:px-4">
           <CardTitle className="text-base sm:text-lg flex items-center">
             <Zap className="mr-2 h-5 w-5 text-primary" /> Revogreen AI Assistant
           </CardTitle>
@@ -342,7 +341,7 @@ export default function ChatInterface() {
             </Button>
           )}
         </CardContent>
-        <div className="px-2 sm:px-4 py-3 border-t border-border">
+        <div className="px-2 sm:px-4 py-2 border-t border-border">
            {imagePreviewUrl && (
             <div className="mb-2 p-2 border rounded-md bg-muted/50 relative max-w-xs mx-auto">
               <Image src={imagePreviewUrl} alt="Selected preview" width={100} height={100} className="rounded-md object-contain max-h-24 w-auto" />
@@ -393,7 +392,6 @@ export default function ChatInterface() {
           if (!open) { 
               setPendingInputValue(null);
               setPendingImageFile(null);
-              // removeSelectedImage(); // Optionally clear image if dialog dismissed without action
           }
           setIsDisclaimerDialogOpen(open);
       }}>
