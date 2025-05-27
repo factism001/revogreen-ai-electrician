@@ -78,10 +78,10 @@ export default function ChatInterface() {
   
   useEffect(() => {
     const viewport = getViewport();
-    if (viewport) {
+    if (viewport && !showScrollToBottomButton) { // Only auto-scroll if user isn't scrolled up
       viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, showScrollToBottomButton]);
 
 
   useEffect(() => {
@@ -150,6 +150,7 @@ export default function ChatInterface() {
     try {
       let aiResponseContent: ElectricalAdviceOutput | TroubleshootingAdviceOutput | AccessoryRecommendationOutput;
       let responseType: Message['type'];
+      const clientIp = null; // Placeholder, actual IP retrieval will be handled by aiActions
 
       switch (aiMode) {
         case "troubleshooting":
@@ -217,25 +218,23 @@ export default function ChatInterface() {
 
     if (!disclaimerAcknowledged) {
       setPendingInputValue(currentInput);
-      setPendingImageFile(selectedImageFile); // Store pending image
+      setPendingImageFile(selectedImageFile); 
       setIsDisclaimerDialogOpen(true);
       setInputValue(''); 
-      // Don't clear selectedImageFile or imagePreviewUrl here, do it in handleDisclaimerAccept or if user cancels
       return;
     }
     await processAndSendMessage(currentInput, selectedImageFile);
     setInputValue('');
-    // selectedImageFile & previewUrl are cleared inside processAndSendMessage's finally block
   };
 
   const handleDisclaimerAccept = async () => {
     setDisclaimerAcknowledged(true);
     localStorage.setItem(DISCLAIMER_LOCAL_STORAGE_KEY, 'true');
     setIsDisclaimerDialogOpen(false);
-    if (pendingInputValue !== null || pendingImageFile !== null) { // Check if there's pending input or image
-      await processAndSendMessage(pendingInputValue || '', pendingImageFile); // Pass pending image
+    if (pendingInputValue !== null || pendingImageFile !== null) { 
+      await processAndSendMessage(pendingInputValue || '', pendingImageFile); 
       setPendingInputValue(null);
-      setPendingImageFile(null); // Clear pending image
+      setPendingImageFile(null); 
     }
   };
   
@@ -248,7 +247,7 @@ export default function ChatInterface() {
           title: "Image Too Large",
           description: `Please select an image smaller than ${MAX_IMAGE_SIZE_MB}MB.`,
         });
-        if (fileInputRef.current) fileInputRef.current.value = ""; // Reset file input
+        if (fileInputRef.current) fileInputRef.current.value = ""; 
         return;
       }
       if (!file.type.startsWith('image/')) {
@@ -279,7 +278,7 @@ export default function ChatInterface() {
     setSelectedImageFile(null);
     setImagePreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // Reset the actual file input
+      fileInputRef.current.value = ""; 
     }
   };
 
@@ -297,6 +296,7 @@ export default function ChatInterface() {
     const target = event.currentTarget; 
     if (target) {
       const { scrollTop, scrollHeight, clientHeight } = target;
+      // Adding a small buffer to clientHeight comparison to be less sensitive
       if (scrollHeight - scrollTop - clientHeight > SCROLL_THRESHOLD) {
         setShowScrollToBottomButton(true);
       } else {
@@ -315,14 +315,14 @@ export default function ChatInterface() {
   return (
     <>
       <Card className="w-full h-[calc(100vh-20rem)] flex flex-col bg-background text-foreground border-0 shadow-none rounded-none">
-        <CardHeader>
+        <CardHeader className="pb-3 pt-4 px-4">
           <CardTitle className="text-base sm:text-lg flex items-center">
             <Zap className="mr-2 h-5 w-5 text-primary" /> Revogreen AI Assistant
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow p-0 overflow-hidden relative">
           <ScrollArea 
-            className="h-full p-4" 
+            className="h-full px-2 sm:px-4 pt-2 pb-1" 
             ref={scrollAreaRef} 
             onScroll={handleScroll} 
           >
@@ -334,7 +334,7 @@ export default function ChatInterface() {
             <Button
               variant="outline"
               size="icon"
-              className="absolute bottom-6 right-6 z-10 rounded-full bg-card/80 backdrop-blur-sm hover:bg-card"
+              className="absolute bottom-4 right-4 z-10 rounded-full bg-card/80 backdrop-blur-sm hover:bg-card"
               onClick={handleScrollToBottomClick}
               aria-label="Scroll to bottom"
             >
@@ -342,9 +342,9 @@ export default function ChatInterface() {
             </Button>
           )}
         </CardContent>
-        <div className="p-4">
+        <div className="px-2 sm:px-4 py-3 border-t border-border">
            {imagePreviewUrl && (
-            <div className="mb-2 p-2 border rounded-md bg-background relative max-w-xs mx-auto">
+            <div className="mb-2 p-2 border rounded-md bg-muted/50 relative max-w-xs mx-auto">
               <Image src={imagePreviewUrl} alt="Selected preview" width={100} height={100} className="rounded-md object-contain max-h-24 w-auto" />
               <Button variant="ghost" size="icon" onClick={removeSelectedImage} className="absolute top-1 right-1 h-6 w-6 bg-destructive/20 hover:bg-destructive/40 rounded-full">
                 <XCircle className="h-4 w-4 text-destructive-foreground" />
@@ -390,11 +390,10 @@ export default function ChatInterface() {
       </Card>
 
       <AlertDialog open={isDisclaimerDialogOpen} onOpenChange={(open) => {
-          if (!open) { // If dialog is closed without accepting
+          if (!open) { 
               setPendingInputValue(null);
               setPendingImageFile(null);
-              // Optionally clear selected image if dialog is dismissed
-              // removeSelectedImage(); 
+              // removeSelectedImage(); // Optionally clear image if dialog dismissed without action
           }
           setIsDisclaimerDialogOpen(open);
       }}>
