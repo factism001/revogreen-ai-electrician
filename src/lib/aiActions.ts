@@ -42,8 +42,8 @@ function handleError(error: any, context: string): string {
     fullError: error, 
   });
   
-  const clientMessageSnippet = detailedMessage.length > 70 ? detailedMessage.substring(0, 67) + '...' : detailedMessage;
-  return `Sorry, an error occurred while fetching ${context}. Details: "${clientMessageSnippet}". Please check server logs or try again.`;
+  // User-friendly message
+  return `Sorry, we encountered an issue while trying to get ${context}. Please try again. If the problem persists, you can try refreshing the page or contact support.`;
 }
 
 export async function fetchElectricalAdvice(input: ElectricalAdviceInput): Promise<ElectricalAdviceOutput> {
@@ -151,9 +151,9 @@ export async function fetchProjectPlan(input: ProjectPlannerInput): Promise<Proj
     return { 
       projectName: 'Error in Planning',
       materialsNeeded: ['Could not generate material list due to an error.'],
-      toolsTypicallyRequired: [errorMessage],
+      toolsTypicallyRequired: [], // Keep this short as it's an error message context
       safetyPrecautions: ['Always prioritize safety. If unsure, consult a professional.'],
-      additionalAdvice: 'An error occurred while trying to generate the project plan.',
+      additionalAdvice: errorMessage, // The main error message can go here
       isComplexProject: false 
     };
   }
