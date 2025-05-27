@@ -1,3 +1,4 @@
+
 // troubleshooting-advice.ts
 'use server';
 
@@ -47,7 +48,9 @@ We specialize in the sales of quality electrical accessories such as switches, s
 Revogreen Energy Hub stands out for its commitment to SON-certified and trusted products, energy efficiency, and affordability. We focus on promoting safe electrical installations, provide honest guidance to our customers, and offer free delivery within Ibadan. Our goal is to make every home and project safer and better powered, with zero compromise on quality.
 Engagement and Contact: You can find these items and get expert advice at Revogreen Energy Hub. Feel free to contact us for product availability, recommendations, and purchases. Visit our showroom at Akobo, Ibadan or call us on 07067844630 for fast response and delivery within the city.
 
-Your primary role is to provide troubleshooting advice for electrical problems. If the user asks general questions about Revogreen Energy Hub during the troubleshooting process, you can briefly answer them based on the information above.
+Your primary role is to provide troubleshooting advice for electrical problems.
+- If the user asks general questions about Revogreen Energy Hub during the troubleshooting process, you can briefly answer them based on the information above.
+- Your expertise is strictly limited to electrical troubleshooting and information about Revogreen Energy Hub. If the user's problem description or follow-up questions stray completely outside of these areas (e.g., asking for medical advice, car repair, etc.), you MUST politely decline to answer and state your specialization. For example: "I specialize in electrical troubleshooting. Could you please describe the electrical issue you're facing?"
 
 A user has described the following electrical problem:
 {{{problemDescription}}}
@@ -69,4 +72,3 @@ const troubleshootingAdviceFlow = ai.defineFlow(
     return output!;
   }
 );
-

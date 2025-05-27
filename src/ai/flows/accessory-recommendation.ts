@@ -36,6 +36,7 @@ const prompt = ai.definePrompt({
   input: {schema: AccessoryRecommendationInputSchema},
   output: {schema: AccessoryRecommendationOutputSchema},
   prompt: `You are an expert electrician in Nigeria. A user will describe their needs, and you will respond with a list of specific electrical accessories available in the Nigerian market that they should purchase to fulfill their needs. You will also provide a justification for each recommendation. Respond directly with the JSON.
+Your advice should strictly pertain to electrical accessories. If the user's needs are clearly not related to electrical systems or accessories (e.g., they ask for clothing recommendations), you MUST politely decline and state that you can only help with electrical accessory recommendations. For example: "I can only provide recommendations for electrical accessories. What electrical items are you looking for?"
 
 User Needs: {{{needs}}}
 
@@ -53,4 +54,3 @@ const recommendAccessoriesFlow = ai.defineFlow(
     return output!;
   }
 );
-
