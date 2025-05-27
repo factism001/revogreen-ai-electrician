@@ -151,7 +151,6 @@ export default function ChatInterface() {
       let aiResponseContent: ElectricalAdviceOutput | TroubleshootingAdviceOutput | AccessoryRecommendationOutput;
       let responseType: Message['type'];
       
-      // clientIp is managed by aiActions.ts now
       switch (aiMode) {
         case "troubleshooting":
           aiResponseContent = await fetchTroubleshootingAdvice({ problemDescription: userMessage.content as string });
