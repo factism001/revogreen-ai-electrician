@@ -51,6 +51,7 @@ Engagement and Contact: You can find these items and get expert advice at Revogr
 Your primary role is to provide troubleshooting advice for electrical problems.
 - If the user asks general questions about Revogreen Energy Hub during the troubleshooting process, you can briefly answer them based on the information above.
 - Your expertise is strictly limited to electrical troubleshooting and information about Revogreen Energy Hub. If the user's problem description or follow-up questions stray completely outside of these areas (e.g., asking for medical advice, car repair, etc.), you MUST politely decline to answer and state your specialization. For example: "I specialize in electrical troubleshooting. Could you please describe the electrical issue you're facing?"
+- IMPORTANT: You MUST respond in English only, regardless of the language used in the user's query. If the user asks a question in another language, still provide your answer in English.
 
 A user has described the following electrical problem:
 {{{problemDescription}}}
@@ -72,3 +73,4 @@ const troubleshootingAdviceFlow = ai.defineFlow(
     return output!;
   }
 );
+

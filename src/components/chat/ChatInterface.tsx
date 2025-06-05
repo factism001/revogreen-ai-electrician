@@ -11,7 +11,7 @@ import { fetchElectricalAdvice, fetchTroubleshootingAdvice, fetchAccessoryRecomm
 import type { ElectricalAdviceInput, ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
 import type { TroubleshootingAdviceOutput } from '@/ai/flows/troubleshooting-advice';
 import type { AccessoryRecommendationOutput } from '@/ai/flows/accessory-recommendation';
-import { Send, Loader2, Zap, Wrench, Lightbulb, ArrowDownCircle, ShieldAlert, Paperclip, XCircle } from 'lucide-react';
+import { Send, Loader2, Zap, Wrench, Lightbulb, ArrowDownCircle, ShieldAlert, Paperclip, XCircle, Mic, MicOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -37,16 +37,16 @@ export interface Message {
 type AiMode = "advice" | "troubleshooting" | "recommendation";
 
 const introductoryMessages: Record<AiMode, string> = {
-  advice: "Hello! I'm Revodev, your AI Electrician. In Advice Mode, you can ask general electrical questions relevant to Nigeria. You can also upload an image for context. How can I assist?",
-  troubleshooting: "Hi, I'm Revodev. Switched to Troubleshooting Mode! Please describe the electrical problem you're experiencing in detail. Image uploads are not supported in this mode yet. I'll provide potential steps and safety tips.",
-  recommendation: "Welcome to Accessory Recommendation Mode! I'm Revodev. Tell me about your electrical needs, and I'll suggest suitable accessories. Image uploads are not supported here."
+  advice: "Hello! I'm Revodev, your AI Electrician. In Advice Mode, you can ask general electrical questions relevant to Nigeria. You can also upload an image or use your microphone for voice input. How can I assist?",
+  troubleshooting: "Hi, I'm Revodev. Switched to Troubleshooting Mode! Please describe the electrical problem you're experiencing in detail. You can use your microphone for voice input. Image uploads are not supported in this mode yet. I'll provide potential steps and safety tips.",
+  recommendation: "Welcome to Accessory Recommendation Mode! I'm Revodev. Tell me about your electrical needs, and I'll suggest suitable accessories. You can use your microphone for voice input. Image uploads are not supported here."
 };
 
 const SCROLL_THRESHOLD = 50;
 const DISCLAIMER_LOCAL_STORAGE_KEY = 'revogreenAiDisclaimerAcknowledged_v1';
 const MAX_IMAGE_SIZE_MB = 5;
-const MOBILE_INPUT_AREA_PADDING_BOTTOM = "pb-[130px] sm:pb-2"; // For ScrollArea
-const MOBILE_SCROLL_BUTTON_BOTTOM = "bottom-[140px] sm:bottom-4"; // For ScrollToBottom button
+const MOBILE_INPUT_AREA_PADDING_BOTTOM = "pb-[130px] sm:pb-2"; 
+const MOBILE_SCROLL_BUTTON_BOTTOM = "bottom-[140px] sm:bottom-4"; 
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -66,12 +66,65 @@ export default function ChatInterface() {
   const [pendingInputValue, setPendingInputValue] = useState<string | null>(null);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
 
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechApiAvailable, setSpeechApiAvailable] = useState(true);
+  const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
+
 
   useEffect(() => {
     const acknowledged = localStorage.getItem(DISCLAIMER_LOCAL_STORAGE_KEY) === 'true';
     if (acknowledged) {
       setDisclaimerAcknowledged(true);
     }
+    
+    // Check for SpeechRecognition API
+    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSpeechApiAvailable(false);
+      console.warn("Speech Recognition API not available in this browser.");
+    } else {
+      // Initialize SpeechRecognition instance
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true; // Keep listening
+      recognition.interimResults = true; // Get results as they come
+      recognition.lang = 'en-US'; // Set language
+      speechRecognitionRef.current = recognition;
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        setInputValue(prev => prev + finalTranscript + interimTranscript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        toast({ variant: "destructive", title: "Voice Error", description: `Speech recognition error: ${event.error}` });
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        // Only set isRecording to false if it was an intentional stop or natural end
+        // If it's an error, onerror handles it.
+        if (speechRecognitionRef.current?.aborted !== true) { // Custom flag to manage abortion
+            setIsRecording(false);
+        }
+      };
+    }
+
+    return () => {
+      if (speechRecognitionRef.current) {
+        (speechRecognitionRef.current as any).aborted = true; // Mark as aborted
+        speechRecognitionRef.current.stop();
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getViewport = () => {
@@ -80,7 +133,7 @@ export default function ChatInterface() {
 
   useEffect(() => {
     const viewport = getViewport();
-    if (viewport && !showScrollToBottomButton) { // Only auto-scroll if user isn't scrolled up
+    if (viewport && !showScrollToBottomButton) { 
       viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
     }
   }, [messages, showScrollToBottomButton]);
@@ -198,7 +251,7 @@ export default function ChatInterface() {
       setSelectedImageFile(null);
       setImagePreviewUrl(null);
       if (fileInputRef.current) {
-        fileInputRef.current.value = ""; // Reset file input
+        fileInputRef.current.value = ""; 
       }
     }
   };
@@ -285,6 +338,7 @@ export default function ChatInterface() {
 
 
   const getPlaceholderText = () => {
+    if (isRecording) return "Listening...";
     switch (aiMode) {
       case "advice": return "Ask an electrical question or describe an image...";
       case "troubleshooting": return "Describe your electrical problem...";
@@ -311,6 +365,41 @@ export default function ChatInterface() {
       viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
     }
   };
+
+  const handleToggleRecording = async () => {
+    if (!speechApiAvailable) {
+      toast({ variant: "destructive", title: "Voice Input Not Supported", description: "Your browser does not support voice input." });
+      return;
+    }
+    if (!speechRecognitionRef.current) return;
+
+    if (isRecording) {
+      (speechRecognitionRef.current as any).aborted = true; // Custom flag
+      speechRecognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      try {
+        // Check for microphone permission
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        if (permissionStatus.state === 'denied') {
+          toast({ variant: "destructive", title: "Microphone Access Denied", description: "Please enable microphone access in your browser settings." });
+          return;
+        }
+         if (permissionStatus.state === 'prompt') {
+           toast({ title: "Microphone Access", description: "Please allow microphone access to use voice input." });
+        }
+        
+        (speechRecognitionRef.current as any).aborted = false; // Reset flag
+        speechRecognitionRef.current.start();
+        setIsRecording(true);
+      } catch (err) {
+        console.error("Error starting speech recognition:", err);
+        toast({ variant: "destructive", title: "Voice Error", description: "Could not start voice recording. Please check microphone permissions." });
+        setIsRecording(false);
+      }
+    }
+  };
+
 
   return (
     <>
@@ -353,7 +442,7 @@ export default function ChatInterface() {
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <Select value={aiMode} onValueChange={(value) => setAiMode(value as AiMode)} disabled={isLoading}>
+            <Select value={aiMode} onValueChange={(value) => setAiMode(value as AiMode)} disabled={isLoading || isRecording}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select mode" />
               </SelectTrigger>
@@ -365,7 +454,7 @@ export default function ChatInterface() {
             </Select>
             <form onSubmit={handleSubmit} className="flex items-center gap-2">
               {aiMode === 'advice' && (
-                <Button type="button" size="icon" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isDisclaimerDialogOpen} className="shrink-0">
+                <Button type="button" size="icon" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isLoading || isDisclaimerDialogOpen || isRecording} className="shrink-0">
                   <Paperclip className="h-5 w-5" />
                   <span className="sr-only">Attach image</span>
                 </Button>
@@ -376,11 +465,22 @@ export default function ChatInterface() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder={getPlaceholderText()}
-                disabled={isLoading || isDisclaimerDialogOpen}
+                disabled={isLoading || isDisclaimerDialogOpen || isRecording}
                 className="flex-grow bg-background focus-visible:ring-primary"
                 aria-label="Chat input"
               />
-              <Button type="submit" size="icon" disabled={isLoading || (!inputValue.trim() && !selectedImageFile) || isDisclaimerDialogOpen} className="bg-primary hover:bg-primary/90">
+              <Button 
+                type="button" 
+                size="icon" 
+                onClick={handleToggleRecording} 
+                disabled={isLoading || isDisclaimerDialogOpen || !speechApiAvailable} 
+                variant={isRecording ? "destructive" : "outline"}
+                className="shrink-0"
+              >
+                {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                <span className="sr-only">{isRecording ? 'Stop recording' : 'Start recording'}</span>
+              </Button>
+              <Button type="submit" size="icon" disabled={isLoading || (!inputValue.trim() && !selectedImageFile) || isDisclaimerDialogOpen || isRecording} className="bg-primary hover:bg-primary/90 shrink-0">
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                 <span className="sr-only">Send message</span>
               </Button>
@@ -420,3 +520,4 @@ export default function ChatInterface() {
     </>
   );
 }
+
