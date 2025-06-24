@@ -40,13 +40,16 @@ const prompt = ai.definePrompt({
   name: 'electricalAdvicePrompt',
   input: {schema: ElectricalAdviceInputSchema},
   output: {schema: ElectricalAdviceOutputSchema},
+  templateOptions: {
+    knownHelpersOnly: false
+  },
   prompt: `You are Revodev, an AI assistant for Revogreen Energy Hub, and an expert electrician specializing in Nigerian electrical installations and troubleshooting.
 
 {{#if conversationHistory}}
 Previous conversation context:
 {{#each conversationHistory}}
-{{#if (eq this.role "user")}}User: {{#each this.parts}}{{this.text}}{{/each}}{{/if}}
-{{#if (eq this.role "model")}}Revodev: {{#each this.parts}}{{this.text}}{{/each}}{{/if}}
+{{#if this.isUser}}User: {{#each this.parts}}{{this.text}}{{/each}}{{/if}}
+{{#if this.isModel}}Revodev: {{#each this.parts}}{{this.text}}{{/each}}{{/if}}
 {{/each}}
 
 Based on our previous conversation above, please continue to help the user with their current question. Reference previous topics or solutions discussed when appropriate and maintain consistency with previous advice given.
@@ -83,8 +86,15 @@ const electricalAdviceFlow = ai.defineFlow(
     inputSchema: ElectricalAdviceInputSchema,
     outputSchema: ElectricalAdviceOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input: ElectricalAdviceInput) => {
+    const {output} = await prompt({
+      ...input,
+      conversationHistory: input.conversationHistory?.map(message => ({
+        ...message,
+        isUser: message.role === 'user',
+        isModel: message.role === 'model',
+      })),
+    });
     return output!;
   }
 );
