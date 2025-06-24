@@ -36,11 +36,13 @@ export interface GoogleAIPart {
     //   mimeType: string;
     //   fileUri: string;
     // };
+
 }
 
 // This type can be used in the AI flows to represent the history specifically for the model
 export interface ModelChatMessage {
   role: 'user' | 'model'; // Models typically only understand 'user' and 'model' roles in history
   parts: GoogleAIPart[];
+
 }
 export type ModelChatHistory = ModelChatMessage[];
