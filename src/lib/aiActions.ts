@@ -8,6 +8,7 @@ import { recommendAccessories, type AccessoryRecommendationInput, type Accessory
 import { getEnergySavingEstimate, type EnergySavingInput, type EnergySavingOutput } from '@/ai/flows/energy-savings-estimator';
 import { getProjectPlan, type ProjectPlannerInput, type ProjectPlannerOutput } from '@/ai/flows/project-planner';
 import { checkInMemoryRateLimit } from './inMemoryRateLimiter';
+import { ModelChatHistory } from '@/lib/types';
 
 function getClientIp(): string | null {
   const FALLBACK_IP_ADDRESS = '0.0.0.0'
@@ -49,7 +50,10 @@ function handleError(error: any, context: string): string {
   return `Sorry, we encountered an issue while trying to get ${context}. Please try again. If the problem persists, you can try refreshing the page or contact support.`;
 }
 
-export async function fetchElectricalAdvice(input: ElectricalAdviceInput): Promise<ElectricalAdviceOutput> {
+export async function fetchElectricalAdvice(
+  input: ElectricalAdviceInput, 
+  conversationHistory?: ModelChatHistory
+): Promise<ElectricalAdviceOutput> {
   const clientIp = getClientIp();
   const rateLimitResult = checkInMemoryRateLimit(clientIp);
   if (!rateLimitResult.allowed) {
@@ -57,14 +61,21 @@ export async function fetchElectricalAdvice(input: ElectricalAdviceInput): Promi
   }
 
   try {
-    const result = await getElectricalAdvice(input);
+    const adviceInput: ElectricalAdviceInput = {
+      ...input,
+      conversationHistory
+    };
+    const result = await getElectricalAdvice(adviceInput);
     return result;
   } catch (error) {
     return { answer: handleError(error, 'electrical advice') };
   }
 }
 
-export async function fetchTroubleshootingAdvice(input: TroubleshootingAdviceInput): Promise<TroubleshootingAdviceOutput> {
+export async function fetchTroubleshootingAdvice(
+  input: TroubleshootingAdviceInput,
+  conversationHistory?: ModelChatHistory
+): Promise<TroubleshootingAdviceOutput> {
   const clientIp = getClientIp();
   const rateLimitResult = checkInMemoryRateLimit(clientIp);
   if (!rateLimitResult.allowed) {
@@ -75,7 +86,11 @@ export async function fetchTroubleshootingAdvice(input: TroubleshootingAdviceInp
   }
 
   try {
-    const result = await getTroubleshootingAdvice(input);
+    const troubleshootingInput: TroubleshootingAdviceInput = {
+      ...input,
+      conversationHistory
+    };
+    const result = await getTroubleshootingAdvice(troubleshootingInput);
     return result;
   } catch (error) {
     const errorMessage = handleError(error, 'troubleshooting advice');
@@ -86,7 +101,10 @@ export async function fetchTroubleshootingAdvice(input: TroubleshootingAdviceInp
   }
 }
 
-export async function fetchAccessoryRecommendation(input: AccessoryRecommendationInput): Promise<AccessoryRecommendationOutput> {
+export async function fetchAccessoryRecommendation(
+  input: AccessoryRecommendationInput,
+  conversationHistory?: ModelChatHistory
+): Promise<AccessoryRecommendationOutput> {
   const clientIp = getClientIp();
   const rateLimitResult = checkInMemoryRateLimit(clientIp);
   if (!rateLimitResult.allowed) {
@@ -97,7 +115,11 @@ export async function fetchAccessoryRecommendation(input: AccessoryRecommendatio
   }
   
   try {
-    const result = await recommendAccessories(input);
+    const recommendationInput: AccessoryRecommendationInput = {
+      ...input,
+      conversationHistory
+    };
+    const result = await recommendAccessories(recommendationInput);
     return result;
   } catch (error) {
     const errorMessage = handleError(error, 'accessory recommendation');
