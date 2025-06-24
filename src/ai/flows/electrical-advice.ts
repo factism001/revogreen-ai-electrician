@@ -87,15 +87,14 @@ const electricalAdviceFlow = ai.defineFlow(
     outputSchema: ElectricalAdviceOutputSchema,
   },
   async (input: ElectricalAdviceInput) => {
-    let processedInput = {...input};
-    if (processedInput.conversationHistory) {
-      processedInput.conversationHistory = processedInput.conversationHistory.map(message => ({
+    const {output} = await prompt({
+      ...input,
+      conversationHistory: input.conversationHistory?.map(message => ({
         ...message,
         isUser: message.role === 'user',
         isModel: message.role === 'model',
-      }));
-    }
-    const {output} = await prompt(processedInput);
+      })),
+    });
     return output!;
   }
 );
