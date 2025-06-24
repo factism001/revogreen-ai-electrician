@@ -32,10 +32,6 @@ export interface GoogleAIPart {
         mimeType: string;
         data: string; // Base64 encoded string
     };
-    // fileData?: { TODO: if we need to support file URIs directly
-    //   mimeType: string;
-    //   fileUri: string;
-    // };
 }
 
 // This type can be used in the AI flows to represent the history specifically for the model
