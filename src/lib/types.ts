@@ -32,11 +32,17 @@ export interface GoogleAIPart {
         mimeType: string;
         data: string; // Base64 encoded string
     };
+    // fileData?: { TODO: if we need to support file URIs directly
+    //   mimeType: string;
+    //   fileUri: string;
+    // };
+
 }
 
 // This type can be used in the AI flows to represent the history specifically for the model
 export interface ModelChatMessage {
   role: 'user' | 'model'; // Models typically only understand 'user' and 'model' roles in history
-  parts: Part[];
+  parts: GoogleAIPart[];
+
 }
 export type ModelChatHistory = ModelChatMessage[];
