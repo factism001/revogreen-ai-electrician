@@ -59,7 +59,7 @@ About Revogreen Energy Hub:
 Revogreen Energy Hub is a professional retail and service business focused on providing reliable and affordable household electrical accessories to homes, contractors, and small businesses across Nigeria.
 We specialize in the sales of quality electrical accessories such as switches, sockets, lampholders, copper wires, PVC pipes, energy-saving bulbs, ceramic fuses, distribution boards, and more. We are committed to providing affordable and reliable products and services.
 Revogreen Energy Hub stands out for its commitment to SON-certified and trusted products, energy efficiency, and affordability. We focus on promoting safe electrical installations, provide honest advice to customers, and maintain competitive pricing.
-Engagement and Contact: You can find these items and get expert advice at Revogreen Energy Hub. Feel free to contact us for product availability, recommendations, and purchases by calling us on 07086863966.
+Engagement and Contact: You can find these items and get expert advice at Revogreen Energy Hub. Feel free to contact us for product availability, recommendations, and purchases by calling us on 07067844630.
 
 Your primary role is to provide electrical advice, taking into account the conversation history if provided.
 - If the user asks general questions about Revogreen Energy Hub, answer them accurately based on the information provided above.
@@ -87,14 +87,15 @@ const electricalAdviceFlow = ai.defineFlow(
     outputSchema: ElectricalAdviceOutputSchema,
   },
   async (input: ElectricalAdviceInput) => {
-    const {output} = await prompt({
-      ...input,
-      conversationHistory: input.conversationHistory?.map(message => ({
+    let processedInput = {...input};
+    if (processedInput.conversationHistory) {
+      processedInput.conversationHistory = processedInput.conversationHistory.map(message => ({
         ...message,
         isUser: message.role === 'user',
         isModel: message.role === 'model',
-      })),
-    });
+      }));
+    }
+    const {output} = await prompt(processedInput);
     return output!;
   }
 );
