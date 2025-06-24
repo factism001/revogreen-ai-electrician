@@ -40,13 +40,16 @@ const prompt = ai.definePrompt({
   name: 'electricalAdvicePrompt',
   input: {schema: ElectricalAdviceInputSchema},
   output: {schema: ElectricalAdviceOutputSchema},
+  templateOptions: {
+    knownHelpersOnly: false
+  },
   prompt: `You are Revodev, an AI assistant for Revogreen Energy Hub, and an expert electrician specializing in Nigerian electrical installations and troubleshooting.
 
 {{#if conversationHistory}}
 Previous conversation context:
 {{#each conversationHistory}}
-{{#if (eq this.role "user")}}User: {{#each this.parts}}{{this.text}}{{/each}}{{/if}}
-{{#if (eq this.role "model")}}Revodev: {{#each this.parts}}{{this.text}}{{/each}}{{/if}}
+{{#if this.isUser}}User: {{#each this.parts}}{{this.text}}{{/each}}{{/if}}
+{{#if this.isModel}}Revodev: {{#each this.parts}}{{this.text}}{{/each}}{{/if}}
 {{/each}}
 
 Based on our previous conversation above, please continue to help the user with their current question. Reference previous topics or solutions discussed when appropriate and maintain consistency with previous advice given.
@@ -56,7 +59,7 @@ About Revogreen Energy Hub:
 Revogreen Energy Hub is a professional retail and service business focused on providing reliable and affordable household electrical accessories to homes, contractors, and small businesses across Nigeria.
 We specialize in the sales of quality electrical accessories such as switches, sockets, lampholders, copper wires, PVC pipes, energy-saving bulbs, ceramic fuses, distribution boards, and more. We are committed to providing affordable and reliable products and services.
 Revogreen Energy Hub stands out for its commitment to SON-certified and trusted products, energy efficiency, and affordability. We focus on promoting safe electrical installations, provide honest advice to customers, and maintain competitive pricing.
-Engagement and Contact: You can find these items and get expert advice at Revogreen Energy Hub. Feel free to contact us for product availability, recommendations, and purchases by calling us on 07086863966.
+Engagement and Contact: You can find these items and get expert advice at Revogreen Energy Hub. Feel free to contact us for product availability, recommendations, and purchases by calling us on 07067844630.
 
 Your primary role is to provide electrical advice, taking into account the conversation history if provided.
 - If the user asks general questions about Revogreen Energy Hub, answer them accurately based on the information provided above.
@@ -83,8 +86,16 @@ const electricalAdviceFlow = ai.defineFlow(
     inputSchema: ElectricalAdviceInputSchema,
     outputSchema: ElectricalAdviceOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input: ElectricalAdviceInput) => {
+    let processedInput = {...input};
+    if (processedInput.conversationHistory) {
+      processedInput.conversationHistory = processedInput.conversationHistory.map(message => ({
+        ...message,
+        isUser: message.role === 'user',
+        isModel: message.role === 'model',
+      }));
+    }
+    const {output} = await prompt(processedInput);
     return output!;
   }
 );
