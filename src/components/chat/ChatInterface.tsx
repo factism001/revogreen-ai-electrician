@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, type FormEvent, type UIEvent, type ChangeEvent } from 'react';
@@ -24,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { convertMessagesToHistory, getRecentHistory } from '@/lib/conversationHistory';
 
 
 export interface Message {
@@ -203,16 +203,26 @@ export default function ChatInterface() {
     setMessages((prevMessages) => [...prevMessages, loadingMessage]);
 
     try {
+      // Convert current messages to history format
+      const currentHistory = convertMessagesToHistory(messages);
+      const recentHistory = getRecentHistory(currentHistory, 8); // Keep last 8 exchanges
+
       let aiResponseContent: ElectricalAdviceOutput | TroubleshootingAdviceOutput | AccessoryRecommendationOutput;
       let responseType: Message['type'];
 
       switch (aiMode) {
         case "troubleshooting":
-          aiResponseContent = await fetchTroubleshootingAdvice({ problemDescription: userMessage.content as string });
+          aiResponseContent = await fetchTroubleshootingAdvice(
+            { problemDescription: userMessage.content as string },
+            recentHistory
+          );
           responseType = 'troubleshooting';
           break;
         case "recommendation":
-          aiResponseContent = await fetchAccessoryRecommendation({ needs: userMessage.content as string });
+          aiResponseContent = await fetchAccessoryRecommendation(
+            { needs: userMessage.content as string },
+            recentHistory
+          );
           responseType = 'recommendation';
           break;
         case "advice":
@@ -221,7 +231,7 @@ export default function ChatInterface() {
           if (imageDataUriForBackend) {
             adviceInput.imageDataUri = imageDataUriForBackend;
           }
-          aiResponseContent = await fetchElectricalAdvice(adviceInput);
+          aiResponseContent = await fetchElectricalAdvice(adviceInput, recentHistory);
           responseType = 'advice';
           break;
       }
@@ -520,4 +530,3 @@ export default function ChatInterface() {
     </>
   );
 }
-
