@@ -40,9 +40,6 @@ const prompt = ai.definePrompt({
   name: 'electricalAdvicePrompt',
   input: {schema: ElectricalAdviceInputSchema},
   output: {schema: ElectricalAdviceOutputSchema},
-  templateOptions: {
-    knownHelpersOnly: false
-  },
   prompt: `You are Revodev, an AI assistant for Revogreen Energy Hub, and an expert electrician specializing in Nigerian electrical installations and troubleshooting.
 
 {{#if conversationHistory}}

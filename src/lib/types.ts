@@ -1,4 +1,11 @@
-import { type Part } from '@genkit-ai/googleai'; // Assuming Part is exported, or we'll define a similar structure
+// Define our own Part interface since @genkit-ai/googleai doesn't export Part
+interface Part {
+  text?: string;
+  inlineData?: {
+    mimeType: string;
+    data: string;
+  };
+}
 
 // Define the structure for a single part of a message's content
 // This aligns with Genkit's expectation for multimodal input.

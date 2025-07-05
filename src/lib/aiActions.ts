@@ -10,10 +10,11 @@ import { getProjectPlan, type ProjectPlannerInput, type ProjectPlannerOutput } f
 import { checkInMemoryRateLimit } from './inMemoryRateLimiter';
 import { ModelChatHistory } from '@/lib/types';
 
-function getClientIp(): string | null {
+async function getClientIp(): Promise<string | null> {
   const FALLBACK_IP_ADDRESS = '0.0.0.0'
-  const forwardedFor = headers().get('x-forwarded-for');
-  const realIp = headers().get('x-real-ip');
+  const headersList = await headers();
+  const forwardedFor = headersList.get('x-forwarded-for');
+  const realIp = headersList.get('x-real-ip');
 
   if (forwardedFor) {
     return forwardedFor.split(',')[0].trim();
@@ -54,7 +55,7 @@ export async function fetchElectricalAdvice(
   input: ElectricalAdviceInput, 
   conversationHistory?: ModelChatHistory
 ): Promise<ElectricalAdviceOutput> {
-  const clientIp = getClientIp();
+  const clientIp = await getClientIp();
   const rateLimitResult = checkInMemoryRateLimit(clientIp);
   if (!rateLimitResult.allowed) {
     return { answer: rateLimitResult.message };
@@ -76,7 +77,7 @@ export async function fetchTroubleshootingAdvice(
   input: TroubleshootingAdviceInput,
   conversationHistory?: ModelChatHistory
 ): Promise<TroubleshootingAdviceOutput> {
-  const clientIp = getClientIp();
+  const clientIp = await getClientIp();
   const rateLimitResult = checkInMemoryRateLimit(clientIp);
   if (!rateLimitResult.allowed) {
     return { 
@@ -105,7 +106,7 @@ export async function fetchAccessoryRecommendation(
   input: AccessoryRecommendationInput,
   conversationHistory?: ModelChatHistory
 ): Promise<AccessoryRecommendationOutput> {
-  const clientIp = getClientIp();
+  const clientIp = await getClientIp();
   const rateLimitResult = checkInMemoryRateLimit(clientIp);
   if (!rateLimitResult.allowed) {
     return { 
@@ -131,7 +132,7 @@ export async function fetchAccessoryRecommendation(
 }
 
 export async function fetchEnergySavingEstimate(input: EnergySavingInput): Promise<EnergySavingOutput> {
-  const clientIp = getClientIp();
+  const clientIp = await getClientIp();
   const rateLimitResult = checkInMemoryRateLimit(clientIp);
   if (!rateLimitResult.allowed) {
     return { 
@@ -155,7 +156,7 @@ export async function fetchEnergySavingEstimate(input: EnergySavingInput): Promi
 }
 
 export async function fetchProjectPlan(input: ProjectPlannerInput): Promise<ProjectPlannerOutput> {
-  const clientIp = getClientIp();
+  const clientIp = await getClientIp();
   const rateLimitResult = checkInMemoryRateLimit(clientIp);
   if (!rateLimitResult.allowed) {
     return { 

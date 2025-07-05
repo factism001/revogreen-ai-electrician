@@ -68,6 +68,28 @@ export default function ChatInterface() {
 
   const [isRecording, setIsRecording] = useState(false);
   const [speechApiAvailable, setSpeechApiAvailable] = useState(true);
+  // Define SpeechRecognition interface for browsers that support it
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    maxAlternatives: number;
+    onresult: (event: any) => void;
+    onerror: (event: any) => void;
+    onend: () => void;
+    onstart: () => void;
+    start(): void;
+    stop(): void;
+    abort(): void;
+    aborted?: boolean; // Custom flag to manage abortion
+  }
+
+  // Extend Window interface to include SpeechRecognition
+  interface ExtendedWindow extends Window {
+    SpeechRecognition?: new () => SpeechRecognition;
+    webkitSpeechRecognition?: new () => SpeechRecognition;
+  }
+
   const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
 
 
@@ -78,7 +100,8 @@ export default function ChatInterface() {
     }
     
     // Check for SpeechRecognition API
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const extendedWindow = window as ExtendedWindow;
+    const SpeechRecognition = extendedWindow.SpeechRecognition || extendedWindow.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setSpeechApiAvailable(false);
       console.warn("Speech Recognition API not available in this browser.");
@@ -90,7 +113,7 @@ export default function ChatInterface() {
       recognition.lang = 'en-US'; // Set language
       speechRecognitionRef.current = recognition;
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: any) => {
         let interimTranscript = '';
         let finalTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -103,7 +126,7 @@ export default function ChatInterface() {
         setInputValue(prev => prev + finalTranscript + interimTranscript);
       };
 
-      recognition.onerror = (event) => {
+      recognition.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
         toast({ variant: "destructive", title: "Voice Error", description: `Speech recognition error: ${event.error}` });
         setIsRecording(false);
