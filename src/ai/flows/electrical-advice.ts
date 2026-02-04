@@ -33,6 +33,13 @@ const ElectricalAdviceOutputSchema = z.object({
 export type ElectricalAdviceOutput = z.infer<typeof ElectricalAdviceOutputSchema>;
 
 export async function getElectricalAdvice(input: ElectricalAdviceInput): Promise<ElectricalAdviceOutput> {
+  // Check if API key is available
+  if (!process.env.GOOGLE_GENAI_API_KEY) {
+    return {
+      answer: "I'm sorry, but the AI service is currently unavailable. The administrator needs to configure the Google AI API key. Please contact support or try again later."
+    };
+  }
+  
   return electricalAdviceFlow(input);
 }
 

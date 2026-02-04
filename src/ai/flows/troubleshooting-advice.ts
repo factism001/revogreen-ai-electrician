@@ -43,6 +43,14 @@ export type TroubleshootingAdviceOutput = z.infer<typeof TroubleshootingAdviceOu
 export async function getTroubleshootingAdvice(
   input: TroubleshootingAdviceInput
 ): Promise<TroubleshootingAdviceOutput> {
+  // Check if API key is available
+  if (!process.env.GOOGLE_GENAI_API_KEY) {
+    return {
+      troubleshootingSteps: "I'm sorry, but the AI troubleshooting service is currently unavailable. The administrator needs to configure the Google AI API key. Please contact support or try again later.",
+      safetyPrecautions: "Always prioritize safety when dealing with electrical issues. If unsure, consult a qualified electrician."
+    };
+  }
+  
   return troubleshootingAdviceFlow(input);
 }
 

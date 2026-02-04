@@ -38,6 +38,14 @@ export type AccessoryRecommendationOutput = z.infer<typeof AccessoryRecommendati
 export async function recommendAccessories(
   input: AccessoryRecommendationInput
 ): Promise<AccessoryRecommendationOutput> {
+  // Check if API key is available
+  if (!process.env.GOOGLE_GENAI_API_KEY) {
+    return {
+      accessories: [],
+      justification: "I'm sorry, but the AI recommendation service is currently unavailable. The administrator needs to configure the Google AI API key. Please contact support or call Revogreen Energy Hub at 07067844630 for personalized accessory recommendations."
+    };
+  }
+  
   return recommendAccessoriesFlow(input);
 }
 
