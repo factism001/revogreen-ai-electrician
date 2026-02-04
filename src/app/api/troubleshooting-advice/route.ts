@@ -1,52 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTroubleshootingAdvice, type TroubleshootingAdviceInput } from '@/ai/flows/troubleshooting-advice';
-import { checkInMemoryRateLimit } from '@/lib/inMemoryRateLimiter';
-import { getRecentHistory } from '@/lib/conversationHistory';
-
-function getClientIp(request: NextRequest): string | null {
-  const FALLBACK_IP_ADDRESS = '0.0.0.0'
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  const realIp = request.headers.get('x-real-ip');
-
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-  if (realIp) {
-    return realIp.trim();
-  }
-  if (process.env.NODE_ENV === 'development') {
-    return '127.0.0.1';
-  }
-  return FALLBACK_IP_ADDRESS;
-}
-
-function handleError(error: any, context: string): string {
-  console.error(`Error in ${context}:`, error);
-  return `Sorry, we encountered an issue while trying to get ${context}. Please try again. If the problem persists, you can try refreshing the page or contact support.`;
-}
 
 export async function POST(request: NextRequest) {
   try {
-    const clientIp = getClientIp(request);
-    const rateLimitResult = checkInMemoryRateLimit(clientIp);
-    
-    if (!rateLimitResult.allowed) {
-      return NextResponse.json({ 
-        troubleshootingSteps: rateLimitResult.message,
-        safetyPrecautions: 'Please adhere to safety guidelines.' 
-      }, { status: 429 });
-    }
-
-    // Check if API key is configured
-    if (!process.env.GOOGLE_GENAI_API_KEY) {
-      return NextResponse.json({ 
-        troubleshootingSteps: "AI service is currently unavailable. Please contact support or try again later. (API key not configured)",
-        safetyPrecautions: 'Always prioritize safety when dealing with electrical issues.'
-      }, { status: 503 });
-    }
-
     const body = await request.json();
-    const { problemDescription, conversationHistory } = body as TroubleshootingAdviceInput;
+    const { problemDescription } = body;
 
     if (!problemDescription || typeof problemDescription !== 'string') {
       return NextResponse.json({ 
@@ -55,27 +12,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const processedHistory = conversationHistory ? getRecentHistory(conversationHistory, 8) : undefined;
-
-    const input: TroubleshootingAdviceInput = {
-      problemDescription,
-      conversationHistory: processedHistory
-    };
-
-    const result = await getTroubleshootingAdvice(input);
-    return NextResponse.json(result);
+    return NextResponse.json({
+      troubleshootingSteps: "Our AI troubleshooting assistant is being set up. For immediate electrical problem solving and expert guidance, please contact Revogreen Energy Hub at 07067844630. Our experienced team can help diagnose and solve your electrical issues safely.",
+      safetyPrecautions: "IMPORTANT SAFETY: Always turn OFF main power before working on electrical systems. Never work on live wires. If unsure about any electrical work, contact a qualified electrician immediately. Revogreen Energy Hub: 07067844630"
+    });
 
   } catch (error) {
-    const errorMessage = handleError(error, 'troubleshooting advice');
     return NextResponse.json({ 
-      troubleshootingSteps: errorMessage,
-      safetyPrecautions: 'Please ensure standard safety precautions are always followed.'
+      troubleshootingSteps: "Service temporarily unavailable. Contact Revogreen Energy Hub at 07067844630 for electrical troubleshooting assistance.",
+      safetyPrecautions: 'Please ensure standard safety precautions are always followed when dealing with electricity.'
     }, { status: 500 });
   }
-}
-
-export async function GET() {
-  return NextResponse.json({ 
-    message: 'Troubleshooting Advice API is running. Use POST to submit problems.' 
-  });
 }
