@@ -37,6 +37,14 @@ export async function POST(request: NextRequest) {
       }, { status: 429 });
     }
 
+    // Check if API key is configured
+    if (!process.env.GOOGLE_GENAI_API_KEY) {
+      return NextResponse.json({ 
+        troubleshootingSteps: "AI service is currently unavailable. Please contact support or try again later. (API key not configured)",
+        safetyPrecautions: 'Always prioritize safety when dealing with electrical issues.'
+      }, { status: 503 });
+    }
+
     const body = await request.json();
     const { problemDescription, conversationHistory } = body as TroubleshootingAdviceInput;
 

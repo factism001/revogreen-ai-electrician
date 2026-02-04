@@ -47,6 +47,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ answer: rateLimitResult.message }, { status: 429 });
     }
 
+    // Check if API key is configured
+    if (!process.env.GOOGLE_GENAI_API_KEY) {
+      return NextResponse.json({ 
+        answer: "AI service is currently unavailable. Please contact support or try again later. (API key not configured)" 
+      }, { status: 503 });
+    }
+
     const body = await request.json();
     const { question, imageDataUri, conversationHistory } = body as ElectricalAdviceInput;
 
