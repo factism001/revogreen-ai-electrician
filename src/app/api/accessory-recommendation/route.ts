@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-3.0-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const prompt = `You are an electrical expert recommending accessories for Nigerian market.
 

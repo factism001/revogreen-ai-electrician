@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-3.0-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const prompt = `You are Revodev, an AI assistant for Revogreen Energy Hub, and an expert electrician familiar with common electrical issues in Nigeria.
 
