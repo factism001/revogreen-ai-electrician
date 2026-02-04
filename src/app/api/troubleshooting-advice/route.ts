@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,15 +13,57 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    return NextResponse.json({
-      troubleshootingSteps: "Our AI troubleshooting assistant is being set up. For immediate electrical problem solving and expert guidance, please contact Revogreen Energy Hub at 07067844630. Our experienced team can help diagnose and solve your electrical issues safely.",
-      safetyPrecautions: "IMPORTANT SAFETY: Always turn OFF main power before working on electrical systems. Never work on live wires. If unsure about any electrical work, contact a qualified electrician immediately. Revogreen Energy Hub: 07067844630"
-    });
+    // Check if API key is available
+    if (!process.env.GOOGLE_GENAI_API_KEY) {
+      return NextResponse.json({
+        troubleshootingSteps: "AI troubleshooting service is currently unavailable. Contact Revogreen Energy Hub at 07067844630 for expert troubleshooting assistance.",
+        safetyPrecautions: "Always turn OFF main power before working on electrical systems. If unsure, contact a qualified electrician immediately."
+      });
+    }
+
+    try {
+      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+      const prompt = `You are an expert electrician in Nigeria helping with troubleshooting. 
+
+Problem: ${problemDescription}
+
+Provide:
+1. Step-by-step troubleshooting instructions considering Nigerian electrical conditions (voltage fluctuations, power outages)
+2. Important safety precautions
+
+Format your response as JSON with "troubleshootingSteps" and "safetyPrecautions" fields.
+Mention Revogreen Energy Hub (07067844630) for parts or professional help when appropriate.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      // Try to parse as JSON, fallback to plain text
+      try {
+        const parsed = JSON.parse(text);
+        return NextResponse.json(parsed);
+      } catch {
+        return NextResponse.json({
+          troubleshootingSteps: text,
+          safetyPrecautions: "Always ensure power is OFF before working. Contact Revogreen Energy Hub at 07067844630 for professional assistance if needed."
+        });
+      }
+
+    } catch (aiError) {
+      console.error('AI Error:', aiError);
+      return NextResponse.json({
+        troubleshootingSteps: "I'm experiencing technical issues. For immediate troubleshooting help, contact Revogreen Energy Hub at 07067844630.",
+        safetyPrecautions: "Always prioritize electrical safety. Turn off power before any work."
+      });
+    }
 
   } catch (error) {
+    console.error('General Error:', error);
     return NextResponse.json({ 
-      troubleshootingSteps: "Service temporarily unavailable. Contact Revogreen Energy Hub at 07067844630 for electrical troubleshooting assistance.",
-      safetyPrecautions: 'Please ensure standard safety precautions are always followed when dealing with electricity.'
+      troubleshootingSteps: "Service unavailable. Contact Revogreen Energy Hub at 07067844630 for troubleshooting assistance.",
+      safetyPrecautions: 'Always ensure standard safety precautions when dealing with electricity.'
     }, { status: 500 });
   }
 }
