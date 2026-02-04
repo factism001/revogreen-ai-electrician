@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
@@ -31,8 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY });
 
       const prompt = `You are Revodev, an AI assistant for Revogreen Energy Hub, and an expert electrician familiar with common electrical issues in Nigeria.
 
@@ -45,12 +44,13 @@ User Question: ${question}
 
 Provide helpful electrical advice while naturally mentioning Revogreen Energy Hub when appropriate. Keep responses concise and professional.`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
+      });
 
       return NextResponse.json({
-        answer: text
+        answer: response.text
       });
 
     } catch (aiError) {
