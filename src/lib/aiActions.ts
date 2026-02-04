@@ -1,10 +1,7 @@
 
-'use server';
-
-import { headers } from 'next/headers';
-import { getElectricalAdvice, type ElectricalAdviceInput, type ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
-import { getTroubleshootingAdvice, type TroubleshootingAdviceInput, type TroubleshootingAdviceOutput } from '@/ai/flows/troubleshooting-advice';
-import { recommendAccessories, type AccessoryRecommendationInput, type AccessoryRecommendationOutput } from '@/ai/flows/accessory-recommendation';
+import { type ElectricalAdviceInput, type ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
+import { type TroubleshootingAdviceInput, type TroubleshootingAdviceOutput } from '@/ai/flows/troubleshooting-advice';
+import { type AccessoryRecommendationInput, type AccessoryRecommendationOutput } from '@/ai/flows/accessory-recommendation';
 import { getEnergySavingEstimate, type EnergySavingInput, type EnergySavingOutput } from '@/ai/flows/energy-savings-estimator';
 import { getProjectPlan, type ProjectPlannerInput, type ProjectPlannerOutput } from '@/ai/flows/project-planner';
 import { checkInMemoryRateLimit } from './inMemoryRateLimiter';
@@ -12,23 +9,13 @@ import { ModelChatHistory } from '@/lib/types';
 
 function getClientIp(): string | null {
   const FALLBACK_IP_ADDRESS = '0.0.0.0'
-  const forwardedFor = headers().get('x-forwarded-for');
-  const realIp = headers().get('x-real-ip');
-
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-  if (realIp) {
-    return realIp.trim();
-  }
+  
   // For development environments where x-forwarded-for might not be set
   if (process.env.NODE_ENV === 'development') {
-    // You might want to return a specific IP for testing or null
     return '127.0.0.1'; // Example for local development
   }
   return FALLBACK_IP_ADDRESS; // Fallback if no IP is found
 }
-
 
 function handleError(error: any, context: string): string {
   let detailedMessage = 'An unknown error occurred.';
@@ -42,8 +29,6 @@ function handleError(error: any, context: string): string {
 
   console.error(`Error in ${context}:`, {
     message: detailedMessage,
-    // Optionally log the full error object if it's not too verbose or sensitive
-    // fullError: error, 
   });
   
   // User-friendly message
@@ -54,18 +39,23 @@ export async function fetchElectricalAdvice(
   input: ElectricalAdviceInput, 
   conversationHistory?: ModelChatHistory
 ): Promise<ElectricalAdviceOutput> {
-  const clientIp = getClientIp();
-  const rateLimitResult = checkInMemoryRateLimit(clientIp);
-  if (!rateLimitResult.allowed) {
-    return { answer: rateLimitResult.message };
-  }
-
   try {
-    const adviceInput: ElectricalAdviceInput = {
-      ...input,
-      conversationHistory
-    };
-    const result = await getElectricalAdvice(adviceInput);
+    const response = await fetch('/api/electrical-advice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...input,
+        conversationHistory
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
     return result;
   } catch (error) {
     return { answer: handleError(error, 'electrical advice') };
@@ -76,21 +66,23 @@ export async function fetchTroubleshootingAdvice(
   input: TroubleshootingAdviceInput,
   conversationHistory?: ModelChatHistory
 ): Promise<TroubleshootingAdviceOutput> {
-  const clientIp = getClientIp();
-  const rateLimitResult = checkInMemoryRateLimit(clientIp);
-  if (!rateLimitResult.allowed) {
-    return { 
-      troubleshootingSteps: rateLimitResult.message,
-      safetyPrecautions: 'Please adhere to safety guidelines.' 
-    };
-  }
-
   try {
-    const troubleshootingInput: TroubleshootingAdviceInput = {
-      ...input,
-      conversationHistory
-    };
-    const result = await getTroubleshootingAdvice(troubleshootingInput);
+    const response = await fetch('/api/troubleshooting-advice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...input,
+        conversationHistory
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
     return result;
   } catch (error) {
     const errorMessage = handleError(error, 'troubleshooting advice');
@@ -105,21 +97,23 @@ export async function fetchAccessoryRecommendation(
   input: AccessoryRecommendationInput,
   conversationHistory?: ModelChatHistory
 ): Promise<AccessoryRecommendationOutput> {
-  const clientIp = getClientIp();
-  const rateLimitResult = checkInMemoryRateLimit(clientIp);
-  if (!rateLimitResult.allowed) {
-    return { 
-      accessories: [],
-      justification: rateLimitResult.message
-    };
-  }
-  
   try {
-    const recommendationInput: AccessoryRecommendationInput = {
-      ...input,
-      conversationHistory
-    };
-    const result = await recommendAccessories(recommendationInput);
+    const response = await fetch('/api/accessory-recommendation', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...input,
+        conversationHistory
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
     return result;
   } catch (error) {
     const errorMessage = handleError(error, 'accessory recommendation');
