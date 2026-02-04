@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, ListChecks, AlertTriangle, ShieldAlert } from 'lucide-react';
-import type { ProjectPlannerOutput } from '@/ai/flows/project-planner';
+import type { ProjectPlannerOutput } from '@/lib/types';
 import { fetchProjectPlan } from '@/lib/aiActions';
 
 export default function ProjectPlanner() {

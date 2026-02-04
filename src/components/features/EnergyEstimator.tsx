@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Lightbulb, AlertTriangle } from 'lucide-react';
-import type { EnergySavingOutput } from '@/ai/flows/energy-savings-estimator';
+import type { EnergySavingEstimateOutput } from '@/lib/types';
 import { fetchEnergySavingEstimate } from '@/lib/aiActions';
 
 export default function EnergyEstimator() {

@@ -6,9 +6,7 @@ import { User } from 'lucide-react';
 import { RevogreenRLogo } from '@/components/icons/RevogreenRLogo';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { ElectricalAdviceOutput } from '@/ai/flows/electrical-advice';
-import type { TroubleshootingAdviceOutput } from '@/ai/flows/troubleshooting-advice';
-import type { AccessoryRecommendationOutput } from '@/ai/flows/accessory-recommendation';
+import type { ElectricalAdviceOutput, TroubleshootingAdviceOutput, AccessoryRecommendationOutput } from '@/lib/types';
 
 interface ChatMessageProps {
   message: Message;

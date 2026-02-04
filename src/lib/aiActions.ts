@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://helpful-panda-b18eac.netlify.app'
   : 'http://localhost:3000';
 
-export async function getElectricalAdvice(input: {
+export async function fetchElectricalAdvice(input: {
   question: string;
   imageDataUri?: string;
   conversationHistory?: any[];
@@ -30,7 +30,7 @@ export async function getElectricalAdvice(input: {
   }
 }
 
-export async function getTroubleshootingAdvice(input: {
+export async function fetchTroubleshootingAdvice(input: {
   problemDescription: string;
   conversationHistory?: any[];
 }) {
@@ -55,7 +55,7 @@ export async function getTroubleshootingAdvice(input: {
   }
 }
 
-export async function recommendAccessories(input: {
+export async function fetchAccessoryRecommendation(input: {
   needs: string;
   conversationHistory?: any[];
 }) {
@@ -78,4 +78,19 @@ export async function recommendAccessories(input: {
       justification: "Service temporarily unavailable. Contact Revogreen Energy Hub at 07067844630 for accessory recommendations."
     };
   }
+}
+
+export async function fetchEnergySavingEstimate(input: any) {
+  // Simple fallback for energy estimation
+  return {
+    estimatedSavings: "Service temporarily unavailable. Contact Revogreen Energy Hub at 07067844630 for energy efficiency consultation and quality electrical accessories."
+  };
+}
+
+export async function fetchProjectPlan(input: any) {
+  // Simple fallback for project planning
+  return {
+    plan: "Our project planning AI is being configured. For professional electrical project planning and consultation, please contact Revogreen Energy Hub at 07067844630. Our experienced team can help plan your electrical project safely and efficiently.",
+    safetyConsiderations: "Always consult with qualified electricians for any electrical project. Safety first!"
+  };
 }
