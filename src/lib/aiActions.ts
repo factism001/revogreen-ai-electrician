@@ -84,3 +84,18 @@ export async function fetchAccessoryRecommendation(input: {
     };
   }
 }
+
+export async function fetchEnergySavingEstimate(input: any) {
+  // Simple fallback for energy estimation
+  return {
+    estimatedSavings: "Service temporarily unavailable. Contact Revogreen Energy Hub at 07067844630 for energy efficiency consultation and quality electrical accessories."
+  };
+}
+
+export async function fetchProjectPlan(input: any) {
+  // Simple fallback for project planning
+  return {
+    plan: "Our project planning AI is being configured. For professional electrical project planning and consultation, please contact Revogreen Energy Hub at 07067844630. Our experienced team can help plan your electrical project safely and efficiently.",
+    safetyConsiderations: "Always consult with qualified electricians for any electrical project. Safety first!"
+  };
+}
