@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientIP = getClientIP(request);
+    const rateLimitResult = checkRateLimit(clientIP);
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json({ 
+        accessories: [],
+        justification: rateLimitResult.message
+      }, { status: 429 });
+    }
+
     const body = await request.json();
     const { needs } = body;
 
@@ -28,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3.0-flash" });
 
       const prompt = `You are an electrical expert recommending accessories for Nigerian market.
 
